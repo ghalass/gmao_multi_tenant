@@ -1,0 +1,585 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ****************** TENANT ******************
+
+model Tenant {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users                     User[]
+  roles                     Role[]
+  sites                     Site[]
+  parcs                     Parc[]
+  engins                    Engin[]
+  anomalies                 Anomalie[]
+  objectifs                 Objectif[]
+  historiqueStatutAnomalies HistoriqueStatutAnomalie[]
+  organes                   Organe[]
+  mvtOrganes                MvtOrgane[]
+  revisionOrganes           RevisionOrgane[]
+  typelubrifiants           Typelubrifiant[]
+  lubrifiants               Lubrifiant[]
+  saisielubrifiants         Saisielubrifiant[]
+  permissions               Permission[]
+  typeconsommationlubs      Typeconsommationlub[]
+  typeconsommationlubParcs  TypeconsommationlubParc[]
+  lubrifiantParcs           LubrifiantParc[]
+  typepannes                Typepanne[]
+  pannes                    Panne[]
+  saisiehrms                Saisiehrm[]
+  saisiehims                Saisiehim[]
+  typeOrganes               TypeOrgane[]
+
+  @@map("tenant")
+}
+
+// ****************** GESTION DES USERS PERMISSIONS & ROLES ******************
+
+// implicite relation between Permission and Role
+model Permission {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  resource    String
+  action      Action
+  description String?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  roles Role[]
+
+  @@unique([resource, action, tenantId])
+  @@map("permission")
+}
+
+enum Action {
+  create
+  read
+  update
+  delete
+}
+
+model Role {
+  id          String  @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  permissions Permission[]
+  users       User[]
+
+  @@unique([tenantId, name])
+  @@map("role")
+}
+
+model User {
+  id           String  @id @default(cuid())
+  tenantId     String?
+  name         String
+  email        String
+  password     String
+  active       Boolean @default(true)
+  isOwner      Boolean @default(false)
+  isSuperAdmin Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roles  Role[]
+
+  @@unique([tenantId, email])
+  @@map("user")
+}
+
+// ****************** GESTION DES DONNEES DE BASE ******************
+
+model Site {
+  id       String  @id @default(cuid())
+  tenantId String
+  name     String
+  active   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  engins     Engin[]
+  anomalies  Anomalie[]
+  objectifs  Objectif[]
+  saisiehrms Saisiehrm[]
+
+  @@unique([tenantId, name])
+  @@map("site")
+}
+
+model Typeparc {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  parcs Parc[]
+
+  @@map("typeparc")
+}
+
+model Parc {
+  id         String @id @default(cuid())
+  tenantId   String
+  name       String
+  typeparcId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  typeparc Typeparc @relation(fields: [typeparcId], references: [id])
+
+  engins                   Engin[]
+  objectifs                Objectif[]
+  pannes                   Panne[]
+  typeconsommationlubParcs TypeconsommationlubParc[]
+  lubrifiantParcs          LubrifiantParc[]
+  typeOrgane               TypeOrgane?               @relation(fields: [typeOrganeId], references: [id])
+  typeOrganeId             String?
+
+  @@unique([tenantId, name])
+  @@map("parc")
+}
+
+model Typeconsommationlub {
+  id   String @id @default(cuid())
+  name String
+
+  parcs            TypeconsommationlubParc[]
+  saisielubrifiant Saisielubrifiant[]
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@map("typeconsommation_lub")
+}
+
+model TypeconsommationlubParc {
+  parcId                String              @map("parc_id")
+  typeconsommationlubId String              @map("typeconsommationlub_id")
+  parc                  Parc                @relation(fields: [parcId], references: [id], onDelete: Restrict)
+  typeconsommationlub   Typeconsommationlub @relation(fields: [typeconsommationlubId], references: [id], onDelete: Restrict)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@id([parcId, typeconsommationlubId, tenantId])
+  @@map("typeconsommation_lub_parc")
+}
+
+model LubrifiantParc {
+  parcId       String     @map("parc_id")
+  lubrifiantId String     @map("lubrifiant_id")
+  parc         Parc       @relation(fields: [parcId], references: [id], onDelete: Restrict)
+  lubrifiant   Lubrifiant @relation(fields: [lubrifiantId], references: [id], onDelete: Restrict)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@id([parcId, lubrifiantId, tenantId])
+  @@map("lubrifiant_parc")
+}
+
+model Engin {
+  id       String  @id @default(cuid())
+  tenantId String
+  name     String
+  active   Boolean @default(true)
+  parcId   String
+  siteId   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parc   Parc   @relation(fields: [parcId], references: [id])
+  site   Site   @relation(fields: [siteId], references: [id])
+
+  anomalies  Anomalie[]
+  saisiehrms Saisiehrm[]
+  saisiehims Saisiehim[]
+  mvtOrganes MvtOrgane[]
+
+  @@unique([tenantId, name])
+  @@map("engin")
+}
+
+model Typepanne {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Relations
+  pannes Panne[]
+
+  @@unique([tenantId, name])
+  @@map("typepanne")
+}
+
+model Panne {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  typepanneId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  typepanne Typepanne   @relation(fields: [typepanneId], references: [id], onDelete: Restrict)
+  // Relation many-to-many implicite avec Parc
+  parcs     Parc[] // ← Relation implicite
+  saisiehim Saisiehim[]
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@map("panne")
+}
+
+// ****************** GESTION DES HIM & HRM ******************
+
+model Saisiehrm {
+  id       String   @id @default(cuid())
+  du       DateTime
+  enginId  String
+  siteId   String
+  hrm      Float
+  compteur Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  engin     Engin       @relation(fields: [enginId], references: [id], onDelete: Restrict)
+  site      Site        @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  saisiehim Saisiehim[]
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([du, enginId, tenantId])
+  @@map("saisie_hrm")
+}
+
+model Saisiehim {
+  id          String  @id @default(cuid())
+  panneId     String
+  him         Float
+  ni          Int
+  saisiehrmId String
+  obs         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  panne            Panne              @relation(fields: [panneId], references: [id], onDelete: Restrict)
+  saisiehrm        Saisiehrm          @relation(fields: [saisiehrmId], references: [id], onDelete: Restrict)
+  saisielubrifiant Saisielubrifiant[]
+  engin            Engin              @relation(fields: [enginId], references: [id])
+  enginId          String
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([panneId, saisiehrmId, tenantId])
+  @@map("saisie_him")
+}
+
+// ****************** GESTION DES BACKLOGS ******************
+
+model Anomalie {
+  id            String         @id @default(cuid())
+  tenantId      String
+  numeroBacklog String
+  description   String
+  priorite      Priorite
+  statut        StatutAnomalie
+
+  enginId String
+  siteId  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant                    Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  engin                     Engin                      @relation(fields: [enginId], references: [id])
+  site                      Site                       @relation(fields: [siteId], references: [id])
+  historiqueStatutAnomalies HistoriqueStatutAnomalie[]
+
+  @@unique([tenantId, numeroBacklog])
+  @@map("anomalie")
+}
+
+model HistoriqueStatutAnomalie {
+  id             String         @id @default(cuid())
+  anomalieId     String
+  ancienStatut   StatutAnomalie
+  nouveauStatut  StatutAnomalie
+  dateChangement DateTime       @default(now())
+  commentaire    String?
+
+  anomalie Anomalie @relation(fields: [anomalieId], references: [id])
+  tenantId String
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, anomalieId])
+  @@map("statut_anomalie")
+}
+
+// Enums pour les valeurs prédéfinies
+enum StatutEngin {
+  ACTIF
+  INACTIF
+  EN_MAINTENANCE
+  HORS_SERVICE
+}
+
+enum SourceAnomalie {
+  VS
+  VJ
+  INSPECTION
+  AUTRE
+}
+
+enum Priorite {
+  ELEVEE
+  MOYENNE
+  FAIBLE
+}
+
+enum StatutAnomalie {
+  ATTENTE_PDR
+  PDR_PRET
+  NON_PROGRAMMEE
+  PROGRAMMEE
+  EXECUTE
+}
+
+// ****************** GESTION DES ORGANES ******************
+
+model Organe {
+  id           String         @id @default(cuid())
+  name         String
+  typeOrganeId String
+  marque       String?
+  sn           String?
+  date_mes     DateTime?
+  origine      OrigineOrgane?
+  circuit      String?
+  hrm_initial  Decimal        @default(0)
+  obs          String?
+  active       Boolean?       @default(true)
+
+  // Relations 1-M
+  type_organe          TypeOrgane       @relation(fields: [typeOrganeId], references: [id])
+  // Relations M-M
+  historiqueMouvements MvtOrgane[]
+  RevisionOrganes      RevisionOrgane[]
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([name, typeOrganeId, tenantId])
+  @@map("organe")
+}
+
+enum OrigineOrgane {
+  BRC
+  APPRO
+  AUTRE
+}
+
+model TypeOrgane {
+  id   String @id @default(cuid())
+  name String
+
+  // Relations M-M
+  parcs   Parc[]
+  // Relations M-1
+  organes Organe[]
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([name, tenantId])
+  @@map("type_organe")
+}
+
+model MvtOrgane {
+  id         String                    @id @default(cuid())
+  organeId   String
+  enginId    String
+  date_mvt   DateTime
+  type_mvt   TypeMouvementOrgane
+  cause      String
+  type_cause TypeCauseMouvementOrgane?
+  obs        String?
+  test       String?
+
+  // Relations
+  organe Organe @relation(fields: [organeId], references: [id])
+  engin  Engin  @relation(fields: [enginId], references: [id])
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([organeId, enginId, date_mvt, type_mvt, tenantId])
+  @@map("mvt_organe")
+}
+
+enum TypeMouvementOrgane {
+  POSE
+  DEPOSE
+}
+
+enum TypeCauseMouvementOrgane {
+  PREVENTIF
+  INCIDENT
+}
+
+model RevisionOrgane {
+  id       String             @id @default(cuid())
+  organeId String
+  date_mvt DateTime
+  type_rg  TypeRevisionOrgane
+  obs      String?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Relations
+  organe Organe @relation(fields: [organeId], references: [id])
+
+  @@unique([organeId, date_mvt, type_rg, tenantId])
+  @@map("revision_organe")
+}
+
+enum TypeRevisionOrgane {
+  VP
+  RG
+  INTERVENTION
+}
+
+// ****************** LUBRIFIANTS ******************
+
+model Typelubrifiant {
+  id   String @id @default(cuid())
+  name String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  lubrifiants Lubrifiant[]
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([name, tenantId])
+  @@map("type_lubrifiant")
+}
+
+model Lubrifiant {
+  id               String @id @default(cuid())
+  name             String @unique
+  typelubrifiantId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  typelubrifiant   Typelubrifiant     @relation(fields: [typelubrifiantId], references: [id], onDelete: Restrict)
+  saisielubrifiant Saisielubrifiant[]
+  lubrifiantParc   LubrifiantParc[]
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([name, tenantId])
+  @@map("lubrifiant")
+}
+
+model Saisielubrifiant {
+  id                    String  @id @default(cuid())
+  lubrifiantId          String
+  qte                   Float
+  obs                   String?
+  saisiehimId           String
+  typeconsommationlubId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  lubrifiant          Lubrifiant           @relation(fields: [lubrifiantId], references: [id], onDelete: Restrict)
+  saisiehim           Saisiehim            @relation(fields: [saisiehimId], references: [id], onDelete: Restrict)
+  typeconsommationlub Typeconsommationlub? @relation(fields: [typeconsommationlubId], references: [id], onDelete: Restrict)
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([lubrifiantId, tenantId, saisiehimId, typeconsommationlubId])
+  @@map("saisie_lubrifiant")
+}
+
+model Objectif {
+  id          String @id @default(cuid())
+  annee       Int
+  parcId      String
+  siteId      String
+  dispo       Float?
+  mtbf        Float?
+  tdm         Float?
+  spe_huile   Float?
+  spe_go      Float?
+  spe_graisse Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  parc     Parc   @relation(fields: [parcId], references: [id], onDelete: Restrict)
+  site     Site   @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([annee, parcId, siteId, tenantId])
+  @@map("objectif")
+}
