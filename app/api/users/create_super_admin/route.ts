@@ -1,8 +1,8 @@
 // app/api/users/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import yup from "@/lib/yupFr";
+import { hashPassword } from "@/lib/auth";
 
 const userCreateSchema = yup.object({
   email: yup.string().required().email().label("Email"),
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Étape 3: Hasher le mot de passe
-    const hashedPassword = await bcrypt.hash(superAdminToCreate.password, 10);
+    const hashedPassword = await hashPassword(superAdminToCreate.password);
 
     // Étape 4: Créer l'utilisateur avec la relation de rôle
     const newUser = await prisma.user.create({

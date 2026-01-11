@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
-import { checkTenant } from "../helpers";
+
 import { getSession } from "@/lib/auth";
 
 const the_resource = "anomalie";
@@ -11,8 +11,6 @@ export async function GET(request: NextRequest) {
   try {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
-    await checkTenant();
 
     const { searchParams } = new URL(request.url);
     const session = await getSession();
@@ -78,7 +76,6 @@ export async function POST(request: NextRequest) {
     if (protectionError) return protectionError;
 
     const session = await getSession();
-    await checkTenant();
 
     const body = await request.json();
 

@@ -1,17 +1,14 @@
 // app/api/users/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
 import { userUpdateSchema } from "@/lib/validations/userSchema";
 import {
   protectDeleteRoute,
   protectReadRoute,
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
-import { useAuth } from "@/hooks/useAuth";
 import { getSession, hashPassword } from "@/lib/auth";
 import { isAdmin, isSuperAdmin } from "@/lib/rbac/core";
-import { checkTenant } from "../../helpers";
 
 const the_resource = "user";
 
@@ -23,8 +20,6 @@ export async function GET(
   try {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
-    await checkTenant();
 
     const { id } = await context.params;
     if (!id) {

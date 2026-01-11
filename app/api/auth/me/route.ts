@@ -74,10 +74,10 @@ export async function GET() {
     };
     return NextResponse.json(userResponse);
   } catch (error) {
-    console.error(
-      "Erreur lors de la récupération de l'utilisateur connecté:",
-      error
-    );
+    // console.error(
+    //   "Erreur lors de la récupération de l'utilisateur connecté:",
+    //   error
+    // );
     return NextResponse.json(
       { error: "Erreur interne du serveur" },
       { status: 500 }

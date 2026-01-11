@@ -3,13 +3,10 @@ import { getSession } from "@/lib/auth";
 import { convertField, isValidFormat } from "@/lib/convertField";
 import { ACTION } from "@/lib/enums";
 import { prisma } from "@/lib/prisma";
-import { checkTenant } from "../../helpers";
 
 export class ImportService {
   async importData(sheetName: string, data: any) {
     try {
-      await checkTenant();
-
       switch (sheetName.toLowerCase()) {
         case "sites":
           return await this.importSites(data);

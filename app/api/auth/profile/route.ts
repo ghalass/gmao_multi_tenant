@@ -1,14 +1,11 @@
 // app/api/auth/profile/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
+import { getSession, hashPassword, verifyPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
-import { checkTenant } from "../../helpers";
 
 export async function PATCH(request: NextRequest) {
   try {
     const session = await getSession();
-    await checkTenant();
 
     if (!session?.userId) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
@@ -38,7 +35,11 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      const isCurrentPasswordValid = await bcrypt.compare(
+      // const isCurrentPasswordValid = await bcrypt.compare(
+      //   currentPassword,
+      //   existingUser.password
+      // );
+      const isCurrentPasswordValid = await verifyPassword(
         currentPassword,
         existingUser.password
       );
@@ -75,7 +76,7 @@ export async function PATCH(request: NextRequest) {
 
     if (name) updateData.name = name;
     if (email) updateData.email = email;
-    if (password) updateData.password = await bcrypt.hash(password, 10);
+    if (password) updateData.password = await hashPassword(password);
 
     // Mettre à jour l'utilisateur
     const user = await prisma.user.update({

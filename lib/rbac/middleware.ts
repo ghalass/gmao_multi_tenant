@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hasPermission, isAdmin } from "./core";
 import { getSession } from "../auth";
 import { ACTION } from "../enums";
+import { prisma } from "../prisma";
 
 export async function protectRoute(
   request: NextRequest,
@@ -12,6 +13,9 @@ export async function protectRoute(
   try {
     // Vérifier si l'utilisateur est admin ou super-admin
     const session = await getSession();
+
+    // check if tenantId is provided, if not throw Error
+    await checkTenant();
 
     if (!session.isLoggedIn)
       return NextResponse.json(
@@ -91,3 +95,23 @@ export async function protectDeleteRoute(
 ): Promise<NextResponse | null> {
   return protectRoute(request, ACTION.DELETE, resource);
 }
+
+const checkTenant = async () => {
+  const session = await getSession();
+  if (!session?.tenant.id) {
+    return NextResponse.json(
+      { message: "Ce nom d'entreprise n'existe pas" },
+      { status: 404 }
+    );
+  }
+  // Vérifier si le tenant existe déjà
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: session?.tenant.id },
+  });
+  if (!tenant) {
+    return NextResponse.json(
+      { message: "Ce nom d'entreprise n'existe pas" },
+      { status: 404 }
+    );
+  }
+};

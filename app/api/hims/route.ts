@@ -2,7 +2,6 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { checkTenant } from "../helpers";
 
 export async function GET(request: NextRequest) {
   try {
@@ -55,7 +54,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
-    await checkTenant();
 
     const body = await request.json();
     const { panneId, him, ni, obs, saisiehrmId, enginId } = body;

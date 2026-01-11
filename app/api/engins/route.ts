@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
 import { getSession } from "@/lib/auth";
-import { checkTenant } from "../helpers";
 
 const the_resource = "engin";
 
@@ -71,7 +70,6 @@ export async function POST(request: NextRequest) {
     if (protectionError) return protectionError;
 
     const session = await getSession();
-    await checkTenant();
 
     const body = await request.json();
     const { name, active = true, parcId, siteId, initialHeureChassis } = body;

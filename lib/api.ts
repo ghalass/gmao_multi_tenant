@@ -240,7 +240,7 @@ export async function apiFetch<T = any>(
           return acc;
         }, {} as Record<string, string>);
       } catch (error) {
-        console.error("Impossible de récupérer les cookies automatiquement");
+        // console.error("Impossible de récupérer les cookies automatiquement");
       }
     }
 
@@ -266,7 +266,7 @@ export async function apiFetch<T = any>(
     });
 
     if (!response.ok) {
-      console.error(`API Error: ${response.status} ${response.statusText}`);
+      // console.error(`API Error: ${response.status} ${response.statusText}`);
 
       // Essayer de parser le JSON de la réponse pour obtenir le message du serveur
       let errorData = {
@@ -284,7 +284,7 @@ export async function apiFetch<T = any>(
           };
         }
       } catch (parseError) {
-        console.error("Impossible de parser l'erreur JSON:", parseError);
+        // console.error("Impossible de parser l'erreur JSON:", parseError);
       }
 
       return {
@@ -302,11 +302,11 @@ export async function apiFetch<T = any>(
         data = await response.json();
       } else {
         const text = await response.text();
-        console.error("Non-JSON response:", text.substring(0, 200));
+        // console.error("Non-JSON response:", text.substring(0, 200));
         throw new Error(`Response is not JSON: ${text.substring(0, 100)}`);
       }
     } catch (parseError) {
-      console.error("JSON Parse Error:", parseError);
+      // console.error("JSON Parse Error:", parseError);
       throw new Error(
         `Invalid JSON response: ${
           parseError instanceof Error ? parseError.message : "Unknown error"
@@ -320,7 +320,7 @@ export async function apiFetch<T = any>(
       data: data as T,
     };
   } catch (error) {
-    console.error("API Error:", error);
+    // console.error("API Error:", error);
 
     return {
       ok: false,
