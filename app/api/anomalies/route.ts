@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
+import { checkTenant } from "../helpers";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "anomalie";
 
@@ -10,14 +12,16 @@ export async function GET(request: NextRequest) {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
-    const { searchParams } = new URL(request.url);
+    await checkTenant();
 
+    const { searchParams } = new URL(request.url);
+    const session = await getSession();
     // Filtres
     const filters: any = {
-      where: {},
+      where: { tenantId: session.tenant.id! },
       include: {
-        engin: { select: { id: true, name: true } },
-        site: { select: { id: true, name: true } },
+        engin: true,
+        site: true,
         historiqueStatutAnomalies: {
           orderBy: { dateChangement: "desc" },
           take: 5,
@@ -73,6 +77,9 @@ export async function POST(request: NextRequest) {
     const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
+    const session = await getSession();
+    await checkTenant();
+
     const body = await request.json();
 
     // Validation basique
@@ -106,7 +113,12 @@ export async function POST(request: NextRequest) {
 
     // Vérifier si le numéro de backlog existe déjà
     const existingAnomalie = await prisma.anomalie.findUnique({
-      where: { numeroBacklog: body.numeroBacklog },
+      where: {
+        tenantId_numeroBacklog: {
+          numeroBacklog: body.numeroBacklog,
+          tenantId: session?.tenant?.id!,
+        },
+      },
     });
 
     if (existingAnomalie) {
@@ -146,6 +158,7 @@ export async function POST(request: NextRequest) {
     // Créer le premier historique de statut
     await prisma.historiqueStatutAnomalie.create({
       data: {
+        tenantId: session.tenant.id!,
         anomalieId: anomalie.id,
         ancienStatut: "ATTENTE_PDR", // Statut initial par défaut
         nouveauStatut: anomalie.statut,

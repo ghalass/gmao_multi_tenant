@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "saisiehrm";
 
@@ -65,13 +66,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
+    const session = await getSession();
     const saisiehrm = await prisma.saisiehrm.create({
       data: {
         du: new Date(du),
         hrm: parseFloat(hrm),
         enginId,
         siteId,
+        tenantId: session.tenant.id!,
       },
       include: {
         engin: {

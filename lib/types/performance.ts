@@ -1,8 +1,16 @@
-import { Engin, Site, Panne, Lubrifiant, Typeconsommationlub } from "@prisma/client";
+// import { Engin, Site, Panne, Lubrifiant, Typeconsommationlub } from "@prisma/client";
+
+import {
+  Engin,
+  Site,
+  Panne,
+  Lubrifiant,
+  Typeconsommationlub,
+} from "../generated/prisma/client";
 
 // Re-export Prisma types
-export type { Engin, Site, Panne, Lubrifiant };
-export type TypeConsommationLub = Typeconsommationlub;
+// export type { Engin, Site, Panne, Lubrifiant };
+// export type TypeConsommationLub = Typeconsommationlub;
 
 // lib/types/performance.ts
 export interface SaisiePerformance {
@@ -42,7 +50,7 @@ export interface SaisieLubrifiant {
   saisiehimId: string;
   typeconsommationlubId?: string;
   lubrifiant: Lubrifiant;
-  typeconsommationlub?: TypeConsommationLub;
+  typeconsommationlub?: Typeconsommationlub;
   createdAt: Date;
   updatedAt: Date;
 }

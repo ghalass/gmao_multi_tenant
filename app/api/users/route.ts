@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
     if (protectionError) return protectionError;
 
     const session = await getSession();
-
     const users = await prisma.user.findMany({
       where: { tenantId: session?.tenant.id },
       include: {

@@ -36,7 +36,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { StatutAnomalie, SourceAnomalie, Priorite } from "@prisma/client";
 
 // Composants de graphique
 import {
@@ -52,6 +51,11 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import {
+  Priorite,
+  SourceAnomalie,
+  StatutAnomalie,
+} from "@/lib/generated/prisma/enums";
 
 export default function AnomalieStatsPage() {
   const [filters, setFilters] = useState({
@@ -785,7 +789,7 @@ export default function AnomalieStatsPage() {
                         </div>
                         <div className="text-center p-3 bg-yellow-500/10 rounded-lg">
                           <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                            {calculateTempsResoluAnomalies("ELEVEE")}
+                            {calculateTempsResoluAnomalies(Priorite.ELEVEE)}
                           </div>
                           <div className="text-xs text-yellow-600 dark:text-yellow-400">
                             jours (Priorité élevée)

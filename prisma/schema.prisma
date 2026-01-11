@@ -33,12 +33,11 @@ model Tenant {
   saisielubrifiants         Saisielubrifiant[]
   permissions               Permission[]
   typeconsommationlubs      Typeconsommationlub[]
-  typeconsommationlubParcs  TypeconsommationlubParc[]
-  lubrifiantParcs           LubrifiantParc[]
+  lubrifiantParc            LubrifiantParc[]
   typepannes                Typepanne[]
   pannes                    Panne[]
-  saisiehrms                Saisiehrm[]
-  saisiehims                Saisiehim[]
+  saisiehrm                 Saisiehrm[]
+  saisiehim                 Saisiehim[]
   typeOrganes               TypeOrgane[]
 
   @@map("tenant")
@@ -118,11 +117,11 @@ model Site {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  engins     Engin[]
-  anomalies  Anomalie[]
-  objectifs  Objectif[]
-  saisiehrms Saisiehrm[]
+  tenant    Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  engins    Engin[]
+  anomalies Anomalie[]
+  objectifs Objectif[]
+  saisiehrm Saisiehrm[]
 
   @@unique([tenantId, name])
   @@map("site")
@@ -152,13 +151,13 @@ model Parc {
   tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   typeparc Typeparc @relation(fields: [typeparcId], references: [id])
 
-  engins                   Engin[]
-  objectifs                Objectif[]
-  pannes                   Panne[]
-  typeconsommationlubParcs TypeconsommationlubParc[]
-  lubrifiantParcs          LubrifiantParc[]
-  typeOrgane               TypeOrgane?               @relation(fields: [typeOrganeId], references: [id])
-  typeOrganeId             String?
+  engins              Engin[]
+  objectifs           Objectif[]
+  pannes              Panne[]
+  typeconsommationlub Typeconsommationlub[]
+  lubrifiantParc      LubrifiantParc[]
+  typeOrgane          TypeOrgane?           @relation(fields: [typeOrganeId], references: [id])
+  typeOrganeId        String?
 
   @@unique([tenantId, name])
   @@map("parc")
@@ -168,31 +167,16 @@ model Typeconsommationlub {
   id   String @id @default(cuid())
   name String
 
-  parcs            TypeconsommationlubParc[]
+  parcs            Parc[]
   saisielubrifiant Saisielubrifiant[]
-  createdAt        DateTime                  @default(now())
-  updatedAt        DateTime                  @updatedAt
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, name])
   @@map("typeconsommation_lub")
-}
-
-model TypeconsommationlubParc {
-  parcId                String              @map("parc_id")
-  typeconsommationlubId String              @map("typeconsommationlub_id")
-  parc                  Parc                @relation(fields: [parcId], references: [id], onDelete: Restrict)
-  typeconsommationlub   Typeconsommationlub @relation(fields: [typeconsommationlubId], references: [id], onDelete: Restrict)
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-
-  tenantId String
-  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@id([parcId, typeconsommationlubId, tenantId])
-  @@map("typeconsommation_lub_parc")
 }
 
 model LubrifiantParc {
@@ -211,12 +195,13 @@ model LubrifiantParc {
 }
 
 model Engin {
-  id       String  @id @default(cuid())
-  tenantId String
-  name     String
-  active   Boolean @default(true)
-  parcId   String
-  siteId   String
+  id                  String  @id @default(cuid())
+  tenantId            String
+  name                String
+  active              Boolean @default(true)
+  parcId              String
+  siteId              String
+  initialHeureChassis Float?  @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -226,8 +211,8 @@ model Engin {
   site   Site   @relation(fields: [siteId], references: [id])
 
   anomalies  Anomalie[]
-  saisiehrms Saisiehrm[]
-  saisiehims Saisiehim[]
+  saisiehrm  Saisiehrm[]
+  saisiehim  Saisiehim[]
   mvtOrganes MvtOrgane[]
 
   @@unique([tenantId, name])
@@ -328,9 +313,23 @@ model Anomalie {
   id            String         @id @default(cuid())
   tenantId      String
   numeroBacklog String
+  dateDetection DateTime
   description   String
+  source        SourceAnomalie // VS, VJ, etc.
   priorite      Priorite
+  besoinPDR     Boolean        @default(false)
+  quantite      Int? // Qté
+  reference     String? // Référence pièce
+  code          String? // Code
+  stock         String? // Stock
+  numeroBS      String? // N° BS
+  programmation String? // Programmation (VS, VJ, PH,…)
+  sortiePDR     String? // Sortie PDR
+  equipe        String? // Équipe
   statut        StatutAnomalie
+  dateExecution DateTime?
+  confirmation  String? // Confirmation
+  observations  String? // Observations
 
   enginId String
   siteId  String

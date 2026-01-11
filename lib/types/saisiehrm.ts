@@ -1,6 +1,12 @@
 // types/saisiehrm.ts
 
-import { Saisiehrm, Engin, Site, Parc, Typeparc } from "@prisma/client";
+import {
+  Saisiehrm,
+  Engin,
+  Site,
+  Parc,
+  Typeparc,
+} from "../generated/prisma/client";
 
 // Base Saisiehrm interface
 export interface BaseSaisiehrm {

@@ -34,7 +34,14 @@ import {
   SaisiehimWithRelations,
   PaginatedSaisiehim,
 } from "@/lib/types/saisiehim";
-import { Engin, Site, Parc, Typeparc, Typepanne } from "@prisma/client";
+// import { Engin, Site, Parc, Typeparc, Typepanne } from "@/lib/types";
+import {
+  Engin,
+  Site,
+  Parc,
+  Typeparc,
+  Typepanne,
+} from "@/lib/generated/prisma/client";
 import { cn } from "@/lib/utils";
 
 export default function AllHimPage() {

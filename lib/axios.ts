@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Configuration de base pour axios
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "/api",
+  baseURL: "/api",
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",

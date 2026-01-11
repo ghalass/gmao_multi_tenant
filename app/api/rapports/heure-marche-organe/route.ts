@@ -66,7 +66,7 @@ export async function POST(req: Request) {
             },
           },
         },
-        MvtOrganes: {
+        mvtOrganes: {
           where: {
             organe: {
               active: true,

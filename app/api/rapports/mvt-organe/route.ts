@@ -64,7 +64,7 @@ export async function POST(req: Request) {
               include: {
                 site: true,
                 parc: true,
-                MvtOrganes: {
+                mvtOrganes: {
                   where: {
                     date_mvt: {
                       gte: debutMois,
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
           // Regrouper les mouvements par organe et date
           const mouvementsParOrgane = new Map();
 
-          for (const mvt of engin.MvtOrganes) {
+          for (const mvt of engin.mvtOrganes) {
             const key = `${mvt.organeId}-${
               mvt.date_mvt.toISOString().split("T")[0]
             }`;

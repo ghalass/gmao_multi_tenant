@@ -1,9 +1,7 @@
 // app/api/saisiehims/list/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { startOfDay, endOfDay } from "date-fns";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {

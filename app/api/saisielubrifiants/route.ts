@@ -149,6 +149,7 @@ export async function POST(request: NextRequest) {
         saisiehimId,
         typeconsommationlubId: typeconsommationlubId || null,
         obs: obs || null,
+        tenantId: session.tenant.id!,
       },
       include: {
         lubrifiant: true,

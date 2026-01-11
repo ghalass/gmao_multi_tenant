@@ -3,17 +3,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   SaisiePerformance,
   SaisiePerformanceFormData,
-  Engin,
-  Site,
-  Panne,
-  Lubrifiant,
-  TypeConsommationLub,
   SaisieLubrifiantFormData,
   SaisieHimFormData,
   SaisieHim,
   SaisieLubrifiant,
 } from "@/lib/types/performance";
 import { apiRequest } from "@/lib/axios";
+import {
+  Engin,
+  Site,
+  Panne,
+  Lubrifiant,
+  Typeconsommationlub,
+} from "@/lib/generated/prisma/client";
 
 export const usePerformances = () => {
   const queryClient = useQueryClient();
@@ -66,7 +68,7 @@ export const usePerformances = () => {
   // Query pour les types de consommation
   const typesConsommationQuery = useQuery({
     queryKey: ["types-consommation"],
-    queryFn: async (): Promise<TypeConsommationLub[]> => {
+    queryFn: async (): Promise<Typeconsommationlub[]> => {
       const { data } = await apiRequest.get("/types-consommation");
       return data;
     },

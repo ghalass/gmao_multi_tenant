@@ -1,11 +1,15 @@
 // app/api/import/services/importService.ts
+import { getSession } from "@/lib/auth";
 import { convertField, isValidFormat } from "@/lib/convertField";
 import { ACTION } from "@/lib/enums";
 import { prisma } from "@/lib/prisma";
+import { checkTenant } from "../../helpers";
 
 export class ImportService {
   async importData(sheetName: string, data: any) {
     try {
+      await checkTenant();
+
       switch (sheetName.toLowerCase()) {
         case "sites":
           return await this.importSites(data);
@@ -131,9 +135,11 @@ export class ImportService {
           },
         ];
       }
-
+      const session = await getSession();
       const engin = await prisma.engin.findUnique({
-        where: { name: enginName },
+        where: {
+          tenantId_name: { name: enginName, tenantId: session.tenant.id! },
+        },
       });
 
       const organe = await prisma.organe.findFirst({
@@ -170,15 +176,16 @@ export class ImportService {
         cause,
         type_cause,
         obs,
+        tenantId: session.tenant.id!,
       };
-
       const saisie = await prisma.mvtOrgane.upsert({
         where: {
-          organeId_enginId_date_mvt_type_mvt: {
+          organeId_enginId_date_mvt_type_mvt_tenantId: {
             organeId: organe.id,
             enginId: engin?.id!,
             date_mvt: date_mvt,
             type_mvt: type_mvt,
+            tenantId: session.tenant.id!,
           },
         },
         update: newData,
@@ -246,9 +253,11 @@ export class ImportService {
       //     },
       //   ];
       // }
-
+      const session = await getSession();
       const typeOrgane = await prisma.typeOrgane.findUnique({
-        where: { name: type_organe },
+        where: {
+          name_tenantId: { name: type_organe, tenantId: session.tenant.id! },
+        },
       });
 
       if (!typeOrgane) {
@@ -271,11 +280,16 @@ export class ImportService {
         circuit,
         hrm_initial,
         obs,
+        tenantId: session.tenant.id!,
       };
 
       const organe = await prisma.organe.upsert({
         where: {
-          name_typeOrganeId: { name: name, typeOrganeId: typeOrgane.id },
+          name_typeOrganeId_tenantId: {
+            name: name,
+            typeOrganeId: typeOrgane.id,
+            tenantId: session.tenant.id!,
+          },
         },
         update: newData,
         create: newData,
@@ -351,9 +365,10 @@ export class ImportService {
         parcsConnect = existingParcs.map((p) => ({ id: p.id }));
       }
 
+      const session = await getSession();
       // Utilisation de upsert avec gestion des relations
       const typeOrgane = await prisma.typeOrgane.upsert({
-        where: { name: name },
+        where: { name_tenantId: { name: name, tenantId: session.tenant.id! } },
         update: {
           name: name,
           parcs: {
@@ -365,6 +380,7 @@ export class ImportService {
           parcs: {
             connect: parcsConnect,
           },
+          tenantId: session.tenant.id!,
         },
         include: {
           parcs: true,
@@ -440,10 +456,13 @@ export class ImportService {
             message: `Le champ 'ni' ne doit pas être négatif`,
           },
         ];
+      const session = await getSession();
 
       // FETCH ENGINS & PANNE
       const engin = await prisma.engin.findUnique({
-        where: { name: enginName },
+        where: {
+          tenantId_name: { name: enginName, tenantId: session.tenant.id! },
+        },
         include: { parc: true },
       });
       if (!engin) {
@@ -454,6 +473,7 @@ export class ImportService {
       const panne = await prisma.panne.findFirst({
         where: {
           name: panneName,
+          tenantId: session.tenant.id!,
           parcs: {
             some: { name: engin.parc.name },
           },
@@ -469,7 +489,7 @@ export class ImportService {
         ];
       }
       let saisiehrm = await prisma.saisiehrm.findFirst({
-        where: { du: du, enginId: engin.id },
+        where: { du: du, enginId: engin.id, tenantId: session.tenant.id! },
       });
       if (!saisiehrm) {
         return [
@@ -490,15 +510,19 @@ export class ImportService {
         engin: { connect: { id: engin.id } },
       };
 
-      const saisie = await prisma.saisiehim.upsert({
+      await prisma.saisiehim.upsert({
         where: {
-          panneId_saisiehrmId: {
+          panneId_saisiehrmId_tenantId: {
             panneId: panne.id,
             saisiehrmId: saisiehrm.id,
+            tenantId: session.tenant.id!,
           },
         },
-        update: upsertData, // Même structure
-        create: upsertData, // Même structure
+        update: upsertData,
+        create: {
+          ...upsertData,
+          tenant: { connect: { id: session.tenant.id! } },
+        },
       });
 
       return [
@@ -588,10 +612,18 @@ export class ImportService {
           },
         ];
       }
-
+      const session = await getSession();
       const [engin, site] = await Promise.all([
-        prisma.engin.findUnique({ where: { name: enginName } }),
-        prisma.site.findUnique({ where: { name: siteName } }),
+        prisma.engin.findUnique({
+          where: {
+            tenantId_name: { name: enginName, tenantId: session.tenant.id! },
+          },
+        }),
+        prisma.site.findUnique({
+          where: {
+            tenantId_name: { name: siteName, tenantId: session.tenant.id! },
+          },
+        }),
       ]);
 
       if (!engin) {
@@ -612,13 +644,13 @@ export class ImportService {
           },
         ];
       }
-
       const saisie = await prisma.saisiehrm.upsert({
         where: {
-          du_enginId: {
+          du_enginId_tenantId: {
             // Utilisez le nom de la contrainte unique composée
             du: du,
             enginId: engin.id,
+            tenantId: session.tenant.id!,
           },
         },
         update: {
@@ -634,6 +666,7 @@ export class ImportService {
           siteId: site.id,
           hrm,
           compteur,
+          tenantId: session.tenant.id!,
         },
       });
 
@@ -669,15 +702,16 @@ export class ImportService {
           },
         ];
       }
-
+      const session = await getSession();
       const site = await prisma.site.upsert({
-        where: { name: name },
+        where: { tenantId_name: { name: name, tenantId: session.tenant.id! } },
         update: {
           name: name,
           updatedAt: new Date(),
         },
         create: {
           name: name,
+          tenantId: session.tenant.id!,
         },
       });
 
@@ -757,13 +791,14 @@ export class ImportService {
         ];
       }
 
+      const session = await getSession();
       const newData = {
         name,
         description,
+        tenantId: session.tenant.id!,
       };
-
       const typepanne = await prisma.typepanne.upsert({
-        where: { name: name },
+        where: { tenantId_name: { name: name, tenantId: session.tenant.id! } },
         update: newData,
         create: newData,
       });
@@ -823,9 +858,9 @@ export class ImportService {
           },
         ];
       }
-
+      const session = await getSession();
       const parc = await prisma.parc.upsert({
-        where: { name: name },
+        where: { tenantId_name: { name: name, tenantId: session.tenant.id! } },
         update: {
           name: name,
           typeparcId: typeParc.id,
@@ -834,6 +869,7 @@ export class ImportService {
         create: {
           name: name,
           typeparcId: typeParc.id,
+          tenantId: session.tenant.id!,
         },
       });
 
@@ -898,10 +934,21 @@ export class ImportService {
           },
         ];
       }
-
+      const session = await getSession();
       const [typepanne, parc] = await Promise.all([
-        prisma.typepanne.findUnique({ where: { name: typepanneName } }),
-        prisma.parc.findUnique({ where: { name: parcName } }),
+        prisma.typepanne.findUnique({
+          where: {
+            tenantId_name: {
+              name: typepanneName,
+              tenantId: session.tenant.id!,
+            },
+          },
+        }),
+        prisma.parc.findUnique({
+          where: {
+            tenantId_name: { name: parcName, tenantId: session.tenant.id! },
+          },
+        }),
       ]);
 
       if (!typepanne) {
@@ -923,10 +970,9 @@ export class ImportService {
           },
         ];
       }
-
       // Créer ou mettre à jour la panne avec relation implicite
       const panne = await prisma.panne.upsert({
-        where: { name: name },
+        where: { tenantId_name: { name: name, tenantId: session.tenant.id! } },
         update: {
           description: description,
           typepanneId: typepanne.id,
@@ -939,6 +985,7 @@ export class ImportService {
           name: name,
           description: description,
           typepanneId: typepanne.id,
+          tenantId: session.tenant.id!,
           // Créer avec relation au parc
           parcs: {
             connect: { id: parc.id },
@@ -1005,10 +1052,18 @@ export class ImportService {
           },
         ];
       }
-
+      const session = await getSession();
       const [parc, site] = await Promise.all([
-        prisma.parc.findUnique({ where: { name: parcName } }),
-        prisma.site.findUnique({ where: { name: siteName } }),
+        prisma.parc.findUnique({
+          where: {
+            tenantId_name: { name: parcName, tenantId: session.tenant.id! },
+          },
+        }),
+        prisma.site.findUnique({
+          where: {
+            tenantId_name: { name: siteName, tenantId: session.tenant.id! },
+          },
+        }),
       ]);
 
       if (!parc) {
@@ -1031,7 +1086,9 @@ export class ImportService {
       }
 
       const engin = await prisma.engin.upsert({
-        where: { name: name },
+        where: {
+          tenantId_name: { name: name, tenantId: session.tenant.id! },
+        },
         update: {
           name: name,
           active: active,
@@ -1046,6 +1103,7 @@ export class ImportService {
           parcId: parc.id,
           siteId: site.id,
           initialHeureChassis: initialHeureChassis,
+          tenantId: session.tenant.id!,
         },
       });
 
@@ -1095,9 +1153,11 @@ export class ImportService {
 
       // Note: En production, hash le mot de passe
       const hashedPassword = password; // À remplacer par bcrypt.hash
-
+      const session = await getSession();
       const user = await prisma.user.upsert({
-        where: { email: email },
+        where: {
+          tenantId_email: { email: email, tenantId: session.tenant.id! },
+        },
         update: {
           name: name,
           password: hashedPassword,
@@ -1165,13 +1225,14 @@ export class ImportService {
         ];
       }
 
+      const session = await getSession();
       const newData = {
         name: name.toLowerCase(),
         action: action,
         description,
         resource: resource.toLowerCase(),
+        tenantId: session.tenant.id!,
       };
-
       const result = await prisma.permission.upsert({
         where: { name: name },
         update: newData,
@@ -1256,9 +1317,10 @@ export class ImportService {
         ];
       }
 
+      const session = await getSession();
       // Upsert propre avec reset des relations
       const result = await prisma.role.upsert({
-        where: { name },
+        where: { tenantId_name: { name, tenantId: session.tenant.id! } },
         update: {
           description,
           permissions: {
@@ -1271,6 +1333,7 @@ export class ImportService {
           permissions: {
             connect: existingPermissions,
           },
+          tenantId: session.tenant.id!,
         },
       });
 
@@ -1411,10 +1474,18 @@ export class ImportService {
           },
         ];
       }
-
+      const session = await getSession();
       const [engin, site] = await Promise.all([
-        prisma.engin.findUnique({ where: { name: enginName } }),
-        prisma.site.findUnique({ where: { name: siteName } }),
+        prisma.engin.findUnique({
+          where: {
+            tenantId_name: { name: enginName, tenantId: session.tenant.id! },
+          },
+        }),
+        prisma.site.findUnique({
+          where: {
+            tenantId_name: { name: siteName, tenantId: session.tenant.id! },
+          },
+        }),
       ]);
 
       if (!engin) {
@@ -1437,7 +1508,12 @@ export class ImportService {
       }
 
       const backlog = await prisma.anomalie.upsert({
-        where: { numeroBacklog: numeroBacklog },
+        where: {
+          tenantId_numeroBacklog: {
+            numeroBacklog: numeroBacklog,
+            tenantId: session.tenant.id!,
+          },
+        },
         update: {
           numeroBacklog: numeroBacklog,
           dateDetection: dateDetection,
@@ -1481,6 +1557,7 @@ export class ImportService {
           observations: observations,
           enginId: engin.id,
           siteId: site.id,
+          tenantId: session.tenant.id!,
         },
       });
 

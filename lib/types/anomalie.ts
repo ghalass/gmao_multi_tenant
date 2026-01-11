@@ -1,5 +1,10 @@
 // lib/types/anomalie.ts
-import { StatutAnomalie, SourceAnomalie, Priorite } from "@prisma/client";
+
+import {
+  Priorite,
+  SourceAnomalie,
+  StatutAnomalie,
+} from "../generated/prisma/enums";
 
 export interface Anomalie {
   id: string;
@@ -105,6 +110,7 @@ export interface AnomalieWithRelations extends Anomalie {
     active: boolean;
     parcId: string;
     siteId: string;
+    tenantId: string;
     initialHeureChassis: number | null;
     createdAt: Date;
     updatedAt: Date;

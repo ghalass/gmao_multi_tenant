@@ -1,14 +1,5 @@
 // @/lib/types/saisiehim.ts
-import {
-  Saisiehim,
-  Engin,
-  Site,
-  Parc,
-  Typeparc,
-  Panne,
-  Typepanne,
-  Saisiehrm,
-} from "@prisma/client";
+import { Saisiehim } from "../generated/prisma/client";
 
 export type SaisiehimWithRelations = Saisiehim & {
   id: string;

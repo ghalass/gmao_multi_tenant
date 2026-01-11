@@ -1,7 +1,6 @@
 // app/api/users/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { userUpdateSchema } from "@/lib/validations/userSchema";
 import {
@@ -12,6 +11,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { getSession, hashPassword } from "@/lib/auth";
 import { isAdmin, isSuperAdmin } from "@/lib/rbac/core";
+import { checkTenant } from "../../helpers";
 
 const the_resource = "user";
 
@@ -23,6 +23,8 @@ export async function GET(
   try {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
+
+    await checkTenant();
 
     const { id } = await context.params;
     if (!id) {
@@ -68,6 +70,24 @@ export async function PATCH(
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
+    const session = await getSession();
+    if (!session?.tenant.id) {
+      return NextResponse.json(
+        { message: "Ce nom d'entreprise n'existe pas" },
+        { status: 404 }
+      );
+    }
+    // Vérifier si le tenant existe déjà
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: session?.tenant.id },
+    });
+    if (!tenant) {
+      return NextResponse.json(
+        { message: "Ce nom d'entreprise n'existe pas" },
+        { status: 404 }
+      );
+    }
+
     const { id } = await context.params;
     const body = await request.json();
 
@@ -104,7 +124,9 @@ export async function PATCH(
     // Vérifier si l'email est déjà utilisé par un autre utilisateur
     if (email && email !== existingUser.email) {
       const emailExists = await prisma.user.findUnique({
-        where: { email },
+        where: {
+          tenantId_email: { email, tenantId: session.tenant.id },
+        },
       });
 
       if (emailExists) {
@@ -241,24 +263,6 @@ export async function PATCH(
     return NextResponse.json(userWithoutPassword);
   } catch (error) {
     console.error("Erreur PATCH /api/users/[id]:", error);
-
-    // Gestion spécifique des erreurs Prisma
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") {
-        return NextResponse.json(
-          { message: "Cet email est déjà utilisé" },
-          { status: 400 }
-        );
-      }
-
-      if (error.code === "P2025") {
-        return NextResponse.json(
-          { message: "Utilisateur non trouvé" },
-          { status: 404 }
-        );
-      }
-    }
-
     return NextResponse.json(
       {
         message: "Erreur lors de la mise à jour de l'utilisateur",
@@ -297,7 +301,7 @@ export async function DELETE(
 
     const connectedUser = session?.userId;
     // const connectedUser_is_Admin = await isAdmin(connectedUser);
-    const connectedUser_is_SuperAdmin = await isSuperAdmin(connectedUser);
+    const connectedUser_is_SuperAdmin = session?.isSuperAdmin;
     const toDelete_SuperAdmin = await isSuperAdmin(id); // utilisateur qui sera supprimer isSuperAdmin ?
     const toDelete_Admin = await isAdmin(id); // utilisateur qui sera supprimer isAdmin ?
 
@@ -358,28 +362,6 @@ export async function DELETE(
     });
   } catch (error) {
     console.error("Erreur DELETE /api/users/[id]:", error);
-
-    // Gestion spécifique des erreurs Prisma
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2025") {
-        return NextResponse.json(
-          { message: "Utilisateur non trouvé" },
-          { status: 404 }
-        );
-      }
-
-      if (error.code === "P2003") {
-        // Contrainte de clé étrangère (si l'utilisateur a d'autres relations)
-        return NextResponse.json(
-          {
-            message:
-              "Impossible de supprimer cet utilisateur car il est lié à d'autres données",
-          },
-          { status: 400 }
-        );
-      }
-    }
-
     return NextResponse.json(
       {
         message: "Erreur lors de la suppression de l'utilisateur",

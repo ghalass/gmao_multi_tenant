@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import {
   protectDeleteRoute,
   protectReadRoute,
@@ -133,38 +132,6 @@ export async function PUT(
     return NextResponse.json(permission);
   } catch (error) {
     console.error("❌ Error updating permission:", error);
-
-    // Gestion spécifique des erreurs Prisma
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") {
-        const target = (error.meta?.target as string[]) || [];
-
-        if (target.includes("name")) {
-          return NextResponse.json(
-            { message: "Une permission avec ce nom existe déjà" },
-            { status: 400 }
-          );
-        }
-
-        if (target.includes("resource") && target.includes("action")) {
-          return NextResponse.json(
-            {
-              message:
-                "Une permission avec cette combinaison ressource/action existe déjà",
-            },
-            { status: 400 }
-          );
-        }
-      }
-
-      if (error.code === "P2025") {
-        return NextResponse.json(
-          { message: "Permission non trouvée" },
-          { status: 404 }
-        );
-      }
-    }
-
     // Gestion générique des erreurs
     if (error instanceof Error) {
       if (error.message.includes("Unique constraint")) {
@@ -252,28 +219,6 @@ export async function DELETE(
     return NextResponse.json({ message: "Permission supprimée avec succès" });
   } catch (error) {
     console.error("❌ Error deleting permission:", error);
-
-    // Gestion spécifique des erreurs Prisma
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2025") {
-        return NextResponse.json(
-          { message: "Permission non trouvée" },
-          { status: 404 }
-        );
-      }
-
-      // Si la permission est encore référencée (contrainte de clé étrangère)
-      if (error.code === "P2003") {
-        return NextResponse.json(
-          {
-            message:
-              "Impossible de supprimer cette permission car elle est utilisée dans un ou plusieurs rôles",
-          },
-          { status: 400 }
-        );
-      }
-    }
-
     return NextResponse.json(
       { message: "Erreur lors de la suppression de la permission" },
       { status: 500 }

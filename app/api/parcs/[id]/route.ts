@@ -7,6 +7,7 @@ import {
   protectReadRoute,
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 interface Context {
   params: Promise<{
@@ -30,7 +31,6 @@ export async function GET(request: NextRequest, context: Context) {
         { status: 400 }
       );
     }
-
     const parc = await prisma.parc.findUnique({
       where: { id },
       include: {
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest, context: Context) {
             engins: true,
             // CORRECTION : objectifs au pluriel
             objectifs: true, // ← PLURIEL
-            typesConsommationLub: true,
+            typeconsommationlub: true,
             pannes: true, // ← CORRECTION : "pannes" au lieu de "panneParcs"
             lubrifiantParc: true,
           },
@@ -321,7 +321,7 @@ export async function DELETE(request: NextRequest, context: Context) {
             engins: true,
             // CORRECTION : objectifs au pluriel
             objectifs: true, // ← PLURIEL
-            typesConsommationLub: true,
+            typeconsommationlub: true,
             pannes: true, // ← CORRECTION : "pannes" au lieu de "panneParcs"
             lubrifiantParc: true,
           },
@@ -337,7 +337,7 @@ export async function DELETE(request: NextRequest, context: Context) {
     const relationsCount =
       (existingParc._count.engins || 0) +
       (existingParc._count.objectifs || 0) + // ← PLURIEL
-      (existingParc._count.typesConsommationLub || 0) +
+      (existingParc._count.typeconsommationlub || 0) +
       (existingParc._count.pannes || 0) + // ← CORRECTION : "pannes" au lieu de "panneParcs"
       (existingParc._count.lubrifiantParc || 0);
 
@@ -349,7 +349,7 @@ export async function DELETE(request: NextRequest, context: Context) {
             engins: existingParc._count.engins,
             // CORRECTION : objectifs au pluriel
             objectifs: existingParc._count.objectifs, // ← PLURIEL
-            typesConsommationLub: existingParc._count.typesConsommationLub,
+            typesConsommationLub: existingParc._count.typeconsommationlub,
             pannes: existingParc._count.pannes, // ← CORRECTION : "pannes" au lieu de "panneParcs"
             lubrifiantParc: existingParc._count.lubrifiantParc,
           },

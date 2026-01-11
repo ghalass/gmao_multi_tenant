@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parcSchema } from "@/lib/validations/parcSchema";
 import { protectReadRoute, protectUpdateRoute } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "parc";
 
@@ -50,9 +51,14 @@ export async function POST(request: NextRequest) {
       abortEarly: false,
       stripUnknown: true,
     });
-
+    const session = await getSession();
     const existingParc = await prisma.parc.findUnique({
-      where: { name: validatedData.name },
+      where: {
+        tenantId_name: {
+          name: validatedData.name,
+          tenantId: session.tenant.id!,
+        },
+      },
     });
 
     if (existingParc) {

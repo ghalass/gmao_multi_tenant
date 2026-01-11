@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
         saisiehrmId,
         enginId: enginId || null,
         obs: obs || null,
+        tenantId: session.tenant.id!,
       },
       include: {
         panne: true,

@@ -24,7 +24,11 @@ import {
 import { Anomalie } from "@/lib/types/anomalie";
 import { Site } from "@/hooks/useSites";
 import { Engin } from "@/hooks/useEngins";
-import { StatutAnomalie, SourceAnomalie, Priorite } from "@prisma/client";
+import {
+  Priorite,
+  SourceAnomalie,
+  StatutAnomalie,
+} from "@/lib/generated/prisma/enums";
 
 function formatFormDataForSubmission(
   data: ValidationAnomalieFormData

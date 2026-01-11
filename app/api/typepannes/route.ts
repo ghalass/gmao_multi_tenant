@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "typepanne";
 
@@ -75,10 +76,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
+    const session = await getSession();
     // Vérifier si le type de panne existe déjà
     const existingTypepanne = await prisma.typepanne.findUnique({
-      where: { name },
+      where: { tenantId_name: { name, tenantId: session.tenant.id! } },
     });
 
     if (existingTypepanne) {
@@ -92,6 +93,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         description: description || null,
+        tenantId: session.tenant.id!,
       },
       include: {
         _count: {

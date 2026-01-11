@@ -3,10 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { checkTenant } from "../../helpers";
 
 export async function PATCH(request: NextRequest) {
   try {
     const session = await getSession();
+    await checkTenant();
 
     if (!session?.userId) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
@@ -52,7 +54,12 @@ export async function PATCH(request: NextRequest) {
     // Vérifier si l'email est déjà utilisé par un autre utilisateur
     if (email && email !== existingUser.email) {
       const emailExists = await prisma.user.findUnique({
-        where: { email },
+        where: {
+          tenantId_email: {
+            tenantId: session.tenant.id!,
+            email,
+          },
+        },
       });
 
       if (emailExists) {

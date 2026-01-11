@@ -1,5 +1,11 @@
 // lib/types.ts - Types corrigés basés sur le schéma
 
+import {
+  Priorite,
+  SourceAnomalie,
+  StatutAnomalie,
+} from "./generated/prisma/enums";
+
 // ============ ENUMS ============
 export enum Action {
   CREATE = "create",
@@ -8,26 +14,26 @@ export enum Action {
   DELETE = "delete",
 }
 
-export enum SourceAnomalie {
-  VS = "VS",
-  VJ = "VJ",
-  INSPECTION = "INSPECTION",
-  AUTRE = "AUTRE",
-}
+// export enum SourceAnomalie {
+//   VS = "VS",
+//   VJ = "VJ",
+//   INSPECTION = "INSPECTION",
+//   AUTRE = "AUTRE",
+// }
 
-export enum Priorite {
-  ELEVEE = "ELEVEE",
-  MOYENNE = "MOYENNE",
-  FAIBLE = "FAIBLE",
-}
+// export enum Priorite {
+//   ELEVEE = "ELEVEE",
+//   MOYENNE = "MOYENNE",
+//   FAIBLE = "FAIBLE",
+// }
 
-export enum StatutAnomalie {
-  ATTENTE_PDR = "ATTENTE_PDR",
-  PDR_PRET = "PDR_PRET",
-  NON_PROGRAMMEE = "NON_PROGRAMMEE",
-  PROGRAMMEE = "PROGRAMMEE",
-  EXECUTE = "EXECUTE",
-}
+// export enum StatutAnomalie {
+//   ATTENTE_PDR = "ATTENTE_PDR",
+//   PDR_PRET = "PDR_PRET",
+//   NON_PROGRAMMEE = "NON_PROGRAMMEE",
+//   PROGRAMMEE = "PROGRAMMEE",
+//   EXECUTE = "EXECUTE",
+// }
 
 export enum StatutEngin {
   ACTIF = "ACTIF",

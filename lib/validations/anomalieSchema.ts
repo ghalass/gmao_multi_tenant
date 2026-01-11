@@ -1,6 +1,10 @@
 // lib/validations/anomalieSchema.ts
 import * as yup from "yup";
-import { SourceAnomalie, Priorite, StatutAnomalie } from "@prisma/client";
+import {
+  Priorite,
+  SourceAnomalie,
+  StatutAnomalie,
+} from "../generated/prisma/enums";
 
 export const anomalieSchema = yup.object({
   numeroBacklog: yup

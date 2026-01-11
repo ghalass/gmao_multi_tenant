@@ -1,12 +1,12 @@
 // app/api/roles/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import {
   protectDeleteRoute,
   protectReadRoute,
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "role";
 
@@ -26,12 +26,12 @@ export async function GET(
         { status: 400 }
       );
     }
-
+    const session = await getSession();
     const role = await prisma.role.findUnique({
-      where: { id },
+      where: { id, tenantId: session.tenant.id! },
       include: {
         permissions: true, // Relation directe avec Permission
-        user: true, // Relation directe avec User
+        users: true, // Relation directe avec User
       },
     });
 
@@ -87,7 +87,7 @@ export async function PUT(
       where: { id },
       include: {
         permissions: true,
-        user: true,
+        users: true,
       },
     });
 
@@ -161,31 +161,13 @@ export async function PUT(
       where: { id },
       include: {
         permissions: true,
-        user: true,
+        users: true,
       },
     });
 
     return NextResponse.json(updatedRole);
   } catch (error) {
     console.error("Error updating role:", error);
-
-    // Gestion spécifique des erreurs Prisma
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") {
-        return NextResponse.json(
-          { message: "Un rôle avec ce nom existe déjà" },
-          { status: 400 }
-        );
-      }
-
-      if (error.code === "P2025") {
-        return NextResponse.json(
-          { message: "Rôle non trouvé" },
-          { status: 404 }
-        );
-      }
-    }
-
     // Gestion des erreurs génériques
     if (error instanceof Error && error.message.includes("Unique constraint")) {
       return NextResponse.json(
@@ -222,7 +204,7 @@ export async function DELETE(
     const existingRole = await prisma.role.findUnique({
       where: { id },
       include: {
-        user: true, // Vérifier les utilisateurs directement liés
+        users: true, // Vérifier les utilisateurs directement liés
         permissions: true, // Optionnel: voir les permissions associées
       },
     });
@@ -232,8 +214,8 @@ export async function DELETE(
     }
 
     // Vérifier si le rôle est utilisé par des utilisateurs
-    if (existingRole.user && existingRole.user.length > 0) {
-      const userCount = existingRole.user.length;
+    if (existingRole.users && existingRole.users.length > 0) {
+      const userCount = existingRole.users.length;
       return NextResponse.json(
         {
           message: `Ce rôle est utilisé par ${userCount} utilisateur(s). Vous ne pouvez pas le supprimer tant qu'il est attribué à des utilisateurs.`,
@@ -253,42 +235,6 @@ export async function DELETE(
     });
   } catch (error) {
     console.error("Error deleting role:", error);
-
-    // Gestion spécifique des erreurs Prisma
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2025") {
-        return NextResponse.json(
-          {
-            message: "Rôle non trouvé",
-          },
-          { status: 404 }
-        );
-      }
-
-      // Erreur de contrainte de clé étrangère
-      if (error.code === "P2003") {
-        return NextResponse.json(
-          {
-            message:
-              "Impossible de supprimer ce rôle car il est encore utilisé par des utilisateurs",
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Gestion générique des erreurs
-    if (
-      error instanceof Error &&
-      error.message.includes("Record to delete does not exist")
-    ) {
-      return NextResponse.json(
-        {
-          message: "Rôle non trouvé",
-        },
-        { status: 404 }
-      );
-    }
 
     return NextResponse.json(
       { message: "Erreur lors de la suppression du rôle" },

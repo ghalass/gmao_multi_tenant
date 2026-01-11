@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "lubrifiant";
 
@@ -117,13 +118,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
+    const session = await getSession();
     // Créer le lubrifiant et ses associations avec les parcs
     const result = await prisma.$transaction(async (tx) => {
       const lubrifiant = await tx.lubrifiant.create({
         data: {
           name: name.trim(),
           typelubrifiantId,
+          tenantId: session.tenant.id!,
         },
         include: {
           typelubrifiant: true,
@@ -134,6 +136,7 @@ export async function POST(request: NextRequest) {
       const lubrifiantParcs = parcIds.map((parcId) => ({
         parcId,
         lubrifiantId: lubrifiant.id,
+        tenantId: session.tenant.id!,
       }));
 
       await tx.lubrifiantParc.createMany({

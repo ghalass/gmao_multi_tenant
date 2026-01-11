@@ -34,7 +34,14 @@ import {
   SaisiehrmWithRelations,
   PaginatedSaisiehrm,
 } from "@/lib/types/saisiehrm";
-import { Engin, Site, Parc, Typeparc } from "@prisma/client";
+// import { Engin, Site, Parc, Typeparc } from "@prisma/client";
+import {
+  Engin,
+  Site,
+  Parc,
+  Typeparc,
+  Typepanne,
+} from "@/lib/generated/prisma/client";
 import { cn } from "@/lib/utils";
 
 export default function SaisiehrmPage() {

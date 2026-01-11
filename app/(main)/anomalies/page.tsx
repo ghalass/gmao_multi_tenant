@@ -57,9 +57,14 @@ import { useSites } from "@/hooks/useSites";
 import { useEngins } from "@/hooks/useEngins";
 import { AnomalieModal } from "@/components/anomalies/AnomalieModal";
 import { AnomalieFilters } from "@/components/anomalies/AnomalieFilters";
-import { StatutAnomalie, SourceAnomalie, Priorite } from "@prisma/client";
-import { Anomalie } from "@/lib/types/anomalie";
 import { exportExcel } from "@/lib/xlsxFn";
+import {
+  Priorite,
+  SourceAnomalie,
+  StatutAnomalie,
+} from "@/lib/generated/prisma/enums";
+import { Anomalie, Engin, Site } from "@/lib/generated/prisma/client";
+import { AnomalieWithRelations } from "@/lib/types/anomalie";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -105,7 +110,9 @@ export default function AnomaliesPage() {
     setModalOpen(true);
   };
 
-  const handleView = (anomalie: Anomalie) => {
+  // interface AnomalieWithRelation = Anomalie && {}
+
+  const handleView = (anomalie: AnomalieWithRelations) => {
     router.push(`/anomalies/${anomalie.id}`);
   };
 

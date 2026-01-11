@@ -22,7 +22,11 @@ import { toast } from "sonner";
 import { useAnomalie, useAnomalies } from "@/hooks/useAnomalies";
 import { useSites } from "@/hooks/useSites";
 import { useEngins } from "@/hooks/useEngins";
-import { StatutAnomalie, Priorite } from "@prisma/client";
+import {
+  Priorite,
+  SourceAnomalie,
+  StatutAnomalie,
+} from "@/lib/generated/prisma/enums";
 
 import { AnomalieForm } from "./AnomalieForm";
 import {

@@ -212,3 +212,7 @@ export async function getUserRoles(userId: string): Promise<string[]> {
 export async function isAdmin(userId: string): Promise<boolean> {
   return await hasRole(userId, "admin");
 }
+
+export async function isSuperAdmin(userId: string): Promise<boolean> {
+  return await hasRole(userId, "super admin");
+}

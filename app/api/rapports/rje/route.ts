@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { HttpStatusCode } from "axios"; // ou remplace par ton enum perso
+import { getSession } from "@/lib/auth";
 
 // Helpers de dates
 const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -129,13 +130,15 @@ export async function POST(req: Request) {
         const siteName = saisieJour?.site?.name ?? null;
         const annee = dateCible.getFullYear();
 
+        const session = await getSession();
         // Objectifs
         const objectif = siteId
           ? await prisma.objectif.findUnique({
               where: {
-                annee_parcId_siteId: {
+                annee_parcId_siteId_tenantId: {
                   annee,
-                  parcId: enginDetails?.parcId ?? "",
+                  parcId: enginDetails?.parcId!,
+                  tenantId: session.tenant.id!,
                   siteId: siteId,
                 },
               },

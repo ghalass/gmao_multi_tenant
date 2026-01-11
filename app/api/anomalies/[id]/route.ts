@@ -6,6 +6,8 @@ import {
   protectReadRoute,
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
+import { checkTenant } from "../../helpers";
 
 const the_resource = "anomalie";
 
@@ -65,6 +67,8 @@ export async function PUT(
   try {
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
+
+    await checkTenant();
 
     const { id } = await context.params;
 
@@ -152,6 +156,7 @@ export async function PUT(
     if (body.statut && body.statut !== existingAnomalie.statut) {
       await prisma.historiqueStatutAnomalie.create({
         data: {
+          tenantId: "",
           anomalieId: id,
           ancienStatut: existingAnomalie.statut,
           nouveauStatut: body.statut,

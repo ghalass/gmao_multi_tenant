@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "site";
 
@@ -44,11 +45,12 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
+    const session = await getSession();
     const site = await prisma.site.create({
       data: {
         name: name.trim(),
         active,
+        tenantId: session.tenant.id!,
       },
     });
 

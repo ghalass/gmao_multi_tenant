@@ -9,6 +9,7 @@ export const parcSchema = yup.object({
     .min(2, "Le nom doit contenir au moins 2 caractères")
     .max(50, "Le nom ne peut pas dépasser 50 caractères"),
   typeparcId: yup.string().required("Le type de parc est obligatoire"),
+  tenantId: yup.string().required(),
 });
 
 export type ParcFormData = yup.InferType<typeof parcSchema>;
