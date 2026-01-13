@@ -2,12 +2,13 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { parcId, date } = body;
-
+    const tenantId = (await getSession()).tenant.id!;
     // Validation des entrées
     if (!parcId || !date) {
       return NextResponse.json(
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
 
     // Récupération du parc avec tous ses engins (actifs et inactifs)
     const parc = await prisma.parc.findUnique({
-      where: { id: parcId },
+      where: { id: parcId, tenantId },
       include: {
         engins: {
           select: {
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
     // Récupérer l'objectif MTBF pour le parc et l'année
     const objectif = await prisma.objectif.findFirst({
       where: {
-        AND: [{ annee: year }, { parcId: parcId }],
+        AND: [{ annee: year }, { parcId }, { tenantId }],
       },
       select: {
         mtbf: true,

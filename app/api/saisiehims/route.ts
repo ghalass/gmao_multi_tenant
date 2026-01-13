@@ -10,11 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-    }
+    const tenantId = (await getSession()).tenant.id!;
 
     const { searchParams } = new URL(request.url);
 
@@ -28,7 +24,7 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
-    const where: any = {};
+    const where: any = { tenantId };
 
     // Filtre de recherche
     if (search) {
@@ -118,11 +114,7 @@ export async function POST(request: NextRequest) {
   try {
     const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
-    const session = await getSession();
-    if (!session.userId) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-    }
+    const tenantId = (await getSession()).tenant.id!;
 
     const body = await request.json();
     const { panneId, him, ni, saisiehrmId, enginId, obs } = body;
@@ -135,7 +127,7 @@ export async function POST(request: NextRequest) {
         saisiehrmId,
         enginId: enginId || null,
         obs: obs || null,
-        tenantId: session.tenant.id!,
+        tenantId,
       },
       include: {
         panne: true,

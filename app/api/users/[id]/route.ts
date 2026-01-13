@@ -30,10 +30,11 @@ export async function GET(
     }
 
     const user = await prisma.user.findUnique({
-      where: { id },
+      where: { id, tenantId: (await getSession())?.tenant.id },
       include: {
         roles: true, // Relation directe avec Role
       },
+      omit: { password: true },
     });
 
     if (!user) {
@@ -44,9 +45,8 @@ export async function GET(
     }
 
     // Exclure le mot de passe de la réponse
-    const { password, ...userWithoutPassword } = user;
 
-    return NextResponse.json(userWithoutPassword);
+    return NextResponse.json(user);
   } catch (error) {
     console.error("Error fetching user:", error);
     return NextResponse.json(
@@ -280,7 +280,7 @@ export async function DELETE(
 
     // Vérifier si l'utilisateur existe
     const existingUser = await prisma.user.findUnique({
-      where: { id },
+      where: { id, tenantId: (await getSession())?.tenant.id },
     });
 
     if (!existingUser) {

@@ -1,5 +1,6 @@
+import { API } from "@/lib/api";
+import { ROUTE } from "@/lib/routes";
 import { useQuery } from "@tanstack/react-query";
-import { API } from "@/lib/constantes";
 
 export interface AnalyseIndisponibiliteItem {
   typeParcId: string;
@@ -68,7 +69,7 @@ export const useAnalyseIndisponibilite = (
         return [];
       }
 
-      const res = await fetch(`${API}/rapports/analyse-indisponibilite`, {
+      const res = await fetch(API.RAPPORTS.ANALYSE_INDISPO, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mois, annee }),

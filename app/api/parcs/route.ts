@@ -12,8 +12,9 @@ export async function GET(request: NextRequest) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const parcs = await prisma.parc.findMany({
+      where: { tenantId },
       include: {
         typeparc: true,
         engins: true,
@@ -44,19 +45,19 @@ export async function POST(request: NextRequest) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const body = await request.json();
 
     const validatedData = await parcSchema.validate(body, {
       abortEarly: false,
       stripUnknown: true,
     });
-    const session = await getSession();
+
     const existingParc = await prisma.parc.findUnique({
       where: {
         tenantId_name: {
           name: validatedData.name,
-          tenantId: session.tenant.id!,
+          tenantId,
         },
       },
     });

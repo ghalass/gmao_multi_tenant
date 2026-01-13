@@ -11,8 +11,9 @@ export async function GET(request: NextRequest) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const pannes = await prisma.panne.findMany({
+      where: { tenantId: tenantId },
       include: {
         typepanne: true,
       },
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const body = await request.json();
 
     // Validation basique
@@ -46,11 +47,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const session = await getSession();
     // Vérifier si une panne avec ce nom existe déjà
     const existingPanne = await prisma.panne.findUnique({
       where: {
-        tenantId_name: { name: body.name, tenantId: session.tenant.id! },
+        tenantId_name: { name: body.name, tenantId },
       },
     });
 
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: body.name,
         typepanneId: body.typepanneId,
-        tenantId: session.tenant.id!,
+        tenantId,
         // Ajoutez d'autres champs si nécessaire
       },
       include: {

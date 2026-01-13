@@ -52,7 +52,8 @@ import { fr } from "date-fns/locale";
 import { EnginStats } from "@/components/engins/EnginStats";
 import { AnomaliesTable } from "@/components/anomalies/AnomaliesTable";
 import { Progress } from "@/components/ui/progress";
-import { API } from "@/lib/constantes";
+import { ROUTE } from "@/lib/routes";
+import { API } from "@/lib/api";
 
 interface EnginDetails {
   id: string;
@@ -135,7 +136,7 @@ export default function EnginDetailsPage() {
     const fetchEnginDetails = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API}/engins/${enginId}`);
+        const response = await fetch(API.ENGINS.ENGIN_DETAILS(enginId));
 
         if (!response.ok) {
           throw new Error("Erreur lors du chargement des détails de l'engin");

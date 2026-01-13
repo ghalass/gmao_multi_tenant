@@ -13,8 +13,9 @@ export async function GET(request: NextRequest) {
     // Vérifier la permission de lecture des types de lubrifiant
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const typesLubrifiant = await prisma.typelubrifiant.findMany({
+      where: { tenantId },
       include: {
         _count: {
           select: { lubrifiants: true },
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
     // Vérifier la permission de création des types de lubrifiant
     const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
+    const tenantId = (await getSession()).tenant.id!;
 
     const body = await request.json();
     const { name } = body;
@@ -49,11 +51,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const session = await getSession();
     const typeLubrifiant = await prisma.typelubrifiant.create({
       data: {
         name: name.trim(),
-        tenantId: session.tenant.id!,
+        tenantId,
       },
     });
 

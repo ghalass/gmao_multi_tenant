@@ -7,6 +7,7 @@ import {
   protectReadRoute,
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 interface Context {
   params: Promise<{
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest, context: Context) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest, context: Context) {
     }
 
     const engin = await prisma.engin.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         parc: {
           include: {
@@ -102,7 +103,7 @@ export async function PUT(request: NextRequest, context: Context) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -121,7 +122,7 @@ export async function PUT(request: NextRequest, context: Context) {
 
     // Vérifier si l'engin existe
     const existingEngin = await prisma.engin.findUnique({
-      where: { id },
+      where: { id, tenantId },
     });
 
     if (!existingEngin) {
@@ -145,7 +146,7 @@ export async function PUT(request: NextRequest, context: Context) {
 
     // Vérifier si le parc existe
     const parcExists = await prisma.parc.findUnique({
-      where: { id: validatedData.parcId },
+      where: { id: validatedData.parcId, tenantId },
     });
 
     if (!parcExists) {
@@ -168,7 +169,7 @@ export async function PUT(request: NextRequest, context: Context) {
     }
 
     const updatedEngin = await prisma.engin.update({
-      where: { id },
+      where: { id, tenantId },
       data: validatedData,
       include: {
         parc: {
@@ -225,7 +226,7 @@ export async function DELETE(request: NextRequest, context: Context) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -237,7 +238,7 @@ export async function DELETE(request: NextRequest, context: Context) {
 
     // Vérifier si l'engin existe
     const existingEngin = await prisma.engin.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         _count: {
           select: {
@@ -275,7 +276,7 @@ export async function DELETE(request: NextRequest, context: Context) {
     }
 
     await prisma.engin.delete({
-      where: { id },
+      where: { id, tenantId },
     });
 
     return NextResponse.json({

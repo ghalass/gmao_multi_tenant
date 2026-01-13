@@ -6,6 +6,7 @@ import {
   protectReadRoute,
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "typepanne";
 
@@ -17,12 +18,12 @@ export async function GET(
     // Vérifier la permission de lecture des types de panne
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     // Attendre les params
     const { id } = await context.params;
 
     const typepanne = await prisma.typepanne.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         _count: {
           select: {
@@ -82,7 +83,7 @@ export async function PUT(
     // Vérifier la permission de modification
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     // Attendre les params en premier
     const { id } = await context.params;
     const body = await request.json();
@@ -97,7 +98,7 @@ export async function PUT(
 
     // Vérifier si le type de panne existe
     const existingTypepanne = await prisma.typepanne.findUnique({
-      where: { id },
+      where: { id, tenantId },
     });
 
     if (!existingTypepanne) {
@@ -123,7 +124,7 @@ export async function PUT(
     }
 
     const typepanne = await prisma.typepanne.update({
-      where: { id },
+      where: { id, tenantId },
       data: {
         name,
         description: description || null,
@@ -178,13 +179,13 @@ export async function DELETE(
     // Vérifier la permission de suppression
     const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     // Attendre les params
     const { id } = await context.params;
 
     // Vérifier si le type de panne existe avec toutes les dépendances
     const existingTypepanne = await prisma.typepanne.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         _count: {
           select: {
@@ -242,7 +243,7 @@ export async function DELETE(
     }
 
     await prisma.typepanne.delete({
-      where: { id },
+      where: { id, tenantId },
     });
 
     return NextResponse.json({ success: true });

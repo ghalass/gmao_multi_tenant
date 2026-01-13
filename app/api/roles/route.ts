@@ -12,27 +12,10 @@ export async function GET(request: NextRequest) {
   try {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
-    const session = await getSession();
-    if (!session?.tenant.id) {
-      return NextResponse.json(
-        { message: "Ce nom d'entreprise n'existe pas" },
-        { status: 404 }
-      );
-    }
-    // Vérifier si le tenant existe déjà
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: session?.tenant.id },
-    });
-    if (!tenant) {
-      return NextResponse.json(
-        { message: "Ce nom d'entreprise n'existe pas" },
-        { status: 404 }
-      );
-    }
+    const tenantId = (await getSession()).tenant.id!;
 
     const roles = await prisma.role.findMany({
-      where: { tenantId: session.tenant.id },
+      where: { tenantId },
       include: {
         permissions: true,
       },
@@ -56,23 +39,7 @@ export async function POST(request: NextRequest) {
   try {
     const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
-    const session = await getSession();
-    if (!session?.tenant.id) {
-      return NextResponse.json(
-        { message: "Ce nom d'entreprise n'existe pas" },
-        { status: 404 }
-      );
-    }
-    // Vérifier si le tenant existe déjà
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: session?.tenant.id },
-    });
-    if (!tenant) {
-      return NextResponse.json(
-        { message: "Ce nom d'entreprise n'existe pas" },
-        { status: 404 }
-      );
-    }
+    const tenantId = (await getSession()).tenant.id!;
 
     const body = await request.json();
 
@@ -95,7 +62,7 @@ export async function POST(request: NextRequest) {
     // Vérifier si le nom existe déjà
     const existingRole = await prisma.role.findUnique({
       where: {
-        tenantId_name: { name, tenantId: session?.tenant?.id },
+        tenantId_name: { name, tenantId },
       },
     });
 
@@ -109,7 +76,7 @@ export async function POST(request: NextRequest) {
     // Préparer les données de création
     const createData: any = {
       name: name.trim(),
-      tenantId: session?.tenant?.id,
+      tenantId,
     };
 
     // Ajouter la description si elle existe
@@ -126,6 +93,7 @@ export async function POST(request: NextRequest) {
       createData.permissions = {
         connect: permissions.map((permissionId: string) => ({
           id: permissionId,
+          tenantId,
         })),
       };
     }

@@ -7,8 +7,8 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const saisiehrmId = searchParams.get("saisiehrmId");
-
-    const where: any = {};
+    const tenantId = (await getSession()).tenant.id!;
+    const where: any = { tenantId };
     if (saisiehrmId) where.saisiehrmId = saisiehrmId;
 
     const hims = await prisma.saisiehim.findMany({
@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { panneId, him, ni, obs, saisiehrmId, enginId } = body;
-
+    const tenantId = (await getSession()).tenant.id!;
     // Vérifier si la saisie HRM existe
     const saisiehrm = await prisma.saisiehrm.findUnique({
-      where: { id: saisiehrmId },
+      where: { id: saisiehrmId, tenantId },
     });
 
     if (!saisiehrm) {
@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
       where: {
         panneId,
         saisiehrmId,
+        tenantId,
       },
     });
 

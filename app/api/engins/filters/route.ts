@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { protectReadRoute } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "engin";
 
@@ -9,9 +10,10 @@ export async function GET(request: NextRequest) {
   try {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     // Récupérer tous les typesparc avec leurs parcs et engins
     const typeparcs = await prisma.typeparc.findMany({
+      where: { tenantId },
       include: {
         parcs: {
           include: {

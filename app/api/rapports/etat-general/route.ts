@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { HttpStatusCode } from "axios";
+import { getSession } from "@/lib/auth";
 
 function daysInMonth(year: number, monthIndex: number) {
   return new Date(year, monthIndex + 1, 0).getDate();
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { mois, annee } = body;
-
+    const tenantId = (await getSession()).tenant.id!;
     if (!mois || !annee) {
       return NextResponse.json(
         { message: "Paramètres 'mois' et 'année' obligatoires" },
@@ -55,6 +56,7 @@ export async function POST(req: Request) {
 
     // Récupérer tous les types de parcs avec leurs parcs et engins actifs
     const typeParcs = await prisma.typeparc.findMany({
+      where: { tenantId },
       include: {
         parcs: {
           include: {

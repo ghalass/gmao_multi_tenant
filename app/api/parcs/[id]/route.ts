@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, context: Context) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, context: Context) {
       );
     }
     const parc = await prisma.parc.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         typeparc: {
           select: {
@@ -95,7 +95,7 @@ export async function PUT(request: NextRequest, context: Context) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -127,6 +127,7 @@ export async function PUT(request: NextRequest, context: Context) {
       where: {
         name: validatedData.name,
         id: { not: id },
+        tenantId,
       },
     });
 
@@ -139,7 +140,7 @@ export async function PUT(request: NextRequest, context: Context) {
 
     // Vérifier si le type de parc existe
     const typeparcExists = await prisma.typeparc.findUnique({
-      where: { id: validatedData.typeparcId },
+      where: { id: validatedData.typeparcId, tenantId },
     });
 
     if (!typeparcExists) {
@@ -150,7 +151,7 @@ export async function PUT(request: NextRequest, context: Context) {
     }
 
     const updatedParc = await prisma.parc.update({
-      where: { id },
+      where: { id, tenantId },
       data: validatedData,
       include: {
         typeparc: {
@@ -195,7 +196,7 @@ export async function PATCH(request: NextRequest, context: Context) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -215,7 +216,7 @@ export async function PATCH(request: NextRequest, context: Context) {
 
     // Vérifier si le parc existe
     const existingParc = await prisma.parc.findUnique({
-      where: { id },
+      where: { id, tenantId },
     });
 
     if (!existingParc) {
@@ -228,6 +229,7 @@ export async function PATCH(request: NextRequest, context: Context) {
         where: {
           name: validatedData.name,
           id: { not: id },
+          tenantId,
         },
       });
 
@@ -245,7 +247,7 @@ export async function PATCH(request: NextRequest, context: Context) {
       validatedData.typeparcId !== existingParc.typeparcId
     ) {
       const typeparcExists = await prisma.typeparc.findUnique({
-        where: { id: validatedData.typeparcId },
+        where: { id: validatedData.typeparcId, tenantId },
       });
 
       if (!typeparcExists) {
@@ -257,7 +259,7 @@ export async function PATCH(request: NextRequest, context: Context) {
     }
 
     const updatedParc = await prisma.parc.update({
-      where: { id },
+      where: { id, tenantId },
       data: validatedData,
       include: {
         typeparc: {
@@ -302,7 +304,7 @@ export async function DELETE(request: NextRequest, context: Context) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -314,7 +316,7 @@ export async function DELETE(request: NextRequest, context: Context) {
 
     // Vérifier si le parc existe
     const existingParc = await prisma.parc.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         _count: {
           select: {
@@ -359,7 +361,7 @@ export async function DELETE(request: NextRequest, context: Context) {
     }
 
     await prisma.parc.delete({
-      where: { id },
+      where: { id, tenantId },
     });
 
     return NextResponse.json({

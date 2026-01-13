@@ -6,6 +6,7 @@ import {
   removePermissionFromRole,
 } from "@/lib/rbac/core";
 import { protectDeleteRoute, protectUpdateRoute } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "permission";
 
@@ -16,7 +17,7 @@ export async function POST(
   // 🔒 Vérifier les permissions
   const protectionError = await protectUpdateRoute(request, the_resource);
   if (protectionError) return protectionError;
-
+  const tenantId = (await getSession()).tenant.id!;
   const { id: permissionId, roleId } = await context.params; // ✅ Destructuration avec alias
 
   try {

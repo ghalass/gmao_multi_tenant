@@ -5,6 +5,26 @@ import { getSession } from "../auth";
 import { ACTION } from "../enums";
 import { prisma } from "../prisma";
 
+const checkTenant = async () => {
+  const session = await getSession();
+  if (!session?.tenant.id) {
+    return NextResponse.json(
+      { message: "Aucune tenant ID n'est trouvé" },
+      { status: 404 }
+    );
+  }
+  // Vérifier si le tenant existe déjà
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: session?.tenant.id },
+  });
+  if (!tenant) {
+    return NextResponse.json(
+      { message: "Ce nom d'entreprise n'existe pas" },
+      { status: 404 }
+    );
+  }
+};
+
 export async function protectRoute(
   request: NextRequest,
   action: string,
@@ -95,23 +115,3 @@ export async function protectDeleteRoute(
 ): Promise<NextResponse | null> {
   return protectRoute(request, ACTION.DELETE, resource);
 }
-
-const checkTenant = async () => {
-  const session = await getSession();
-  if (!session?.tenant.id) {
-    return NextResponse.json(
-      { message: "Ce nom d'entreprise n'existe pas" },
-      { status: 404 }
-    );
-  }
-  // Vérifier si le tenant existe déjà
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: session?.tenant.id },
-  });
-  if (!tenant) {
-    return NextResponse.json(
-      { message: "Ce nom d'entreprise n'existe pas" },
-      { status: 404 }
-    );
-  }
-};

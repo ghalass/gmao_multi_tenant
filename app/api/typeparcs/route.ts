@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import yup from "@/lib/yupFr";
 import { protectCreateRoute, protectReadRoute } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 // Schéma de validation Yup
 const typeparcSchema = yup.object().shape({
@@ -26,6 +27,9 @@ export async function GET(request: NextRequest) {
     if (protectionError) return protectionError;
 
     const typeparcs = await prisma.typeparc.findMany({
+      where: {
+        tenantId: (await getSession()).tenant.id!,
+      },
       include: {
         parcs: {
           include: {
@@ -73,6 +77,8 @@ export async function POST(request: NextRequest) {
     const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
 
+    const tenantId = (await getSession()).tenant.id!;
+
     const body = await request.json();
 
     // Validation avec Yup
@@ -96,7 +102,10 @@ export async function POST(request: NextRequest) {
 
     // Vérifier si le nom existe déjà
     const existingTypeparc = await prisma.typeparc.findUnique({
-      where: { name: validatedData.name },
+      where: {
+        name: validatedData.name,
+        tenantId: tenantId,
+      },
     });
 
     if (existingTypeparc) {
@@ -107,7 +116,10 @@ export async function POST(request: NextRequest) {
     }
 
     const typeparc = await prisma.typeparc.create({
-      data: validatedData,
+      data: {
+        name: validatedData.name,
+        tenantId: tenantId,
+      },
       include: {
         _count: {
           select: {

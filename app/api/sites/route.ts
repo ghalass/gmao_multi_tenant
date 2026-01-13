@@ -13,8 +13,9 @@ export async function GET(request: NextRequest) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const sites = await prisma.site.findMany({
+      where: { tenantId },
       include: { _count: { select: { engins: true } } },
       orderBy: { name: "desc" },
     });
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     // Vérifier la permission de création des sites
     const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const body = await request.json();
     const { name, active = true } = body;
 
@@ -45,12 +46,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const session = await getSession();
     const site = await prisma.site.create({
       data: {
         name: name.trim(),
         active,
-        tenantId: session.tenant.id!,
+        tenantId,
       },
     });
 

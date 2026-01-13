@@ -2,12 +2,13 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { parcId, date } = body;
-
+    const tenantId = (await getSession()).tenant.id!;
     // Validation des paramètres
     if (!parcId || !date) {
       return NextResponse.json(
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
     const hoursInMonth = daysInMonth * 24;
 
     const parc = await prisma.parc.findUnique({
-      where: { id: parcId },
+      where: { id: parcId, tenantId },
       include: {
         engins: {
           where: {
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
     // Récupérer toutes les données pour le mois spécifié
     const records = await prisma.saisiehim.findMany({
       where: {
+        tenantId,
         saisiehrm: {
           enginId: { in: parc.engins.map((e) => e.id) },
           du: {
@@ -94,7 +96,7 @@ export async function POST(req: Request) {
     // Récupérer les noms et descriptions des pannes
     const panneIds = [...new Set(records.map((r) => r.panneId))];
     const pannes = await prisma.panne.findMany({
-      where: { id: { in: panneIds } },
+      where: { id: { in: panneIds }, AND: { tenantId } },
       select: { id: true, name: true, description: true },
     });
     const panneMap = new Map(

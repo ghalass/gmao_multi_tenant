@@ -6,6 +6,7 @@ import {
   protectReadRoute,
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "lubrifiant";
 
@@ -16,7 +17,7 @@ export async function GET(
   try {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -27,7 +28,7 @@ export async function GET(
     }
 
     const lubrifiant = await prisma.lubrifiant.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         typelubrifiant: true,
         _count: {
@@ -48,7 +49,7 @@ export async function GET(
 
     // Récupérer les parcs associés
     const lubrifiantParcs = await prisma.lubrifiantParc.findMany({
-      where: { lubrifiantId: id },
+      where: { lubrifiantId: id, tenantId },
       include: {
         parc: {
           select: {
@@ -81,7 +82,7 @@ export async function PUT(
   try {
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -117,7 +118,7 @@ export async function PUT(
     }
 
     const existingLubrifiant = await prisma.lubrifiant.findUnique({
-      where: { id },
+      where: { id, tenantId },
     });
 
     if (!existingLubrifiant) {
@@ -130,7 +131,7 @@ export async function PUT(
     // Si typelubrifiantId est fourni, vérifier qu'il existe
     if (typelubrifiantId) {
       const typeLubrifiantExists = await prisma.typelubrifiant.findUnique({
-        where: { id: typelubrifiantId },
+        where: { id: typelubrifiantId, tenantId },
       });
 
       if (!typeLubrifiantExists) {
@@ -144,7 +145,7 @@ export async function PUT(
     // Si parcIds est fourni, vérifier que tous les parcs existent
     if (parcIds) {
       const parcs = await prisma.parc.findMany({
-        where: { id: { in: parcIds } },
+        where: { id: { in: parcIds }, tenantId },
       });
 
       if (parcs.length !== parcIds.length) {
@@ -158,7 +159,7 @@ export async function PUT(
     // Mettre à jour le lubrifiant et ses associations avec les parcs
     const result = await prisma.$transaction(async (tx) => {
       const lubrifiant = await tx.lubrifiant.update({
-        where: { id },
+        where: { id, tenantId },
         data: {
           ...(name !== undefined && { name: name.trim() }),
           ...(typelubrifiantId !== undefined && { typelubrifiantId }),
@@ -172,7 +173,7 @@ export async function PUT(
       if (parcIds !== undefined) {
         // Supprimer toutes les associations existantes
         await tx.lubrifiantParc.deleteMany({
-          where: { lubrifiantId: id },
+          where: { lubrifiantId: id, tenantId },
         });
 
         // Créer les nouvelles associations
@@ -191,7 +192,7 @@ export async function PUT(
 
     // Récupérer les parcs associés pour la réponse
     const lubrifiantParcs = await prisma.lubrifiantParc.findMany({
-      where: { lubrifiantId: result.id },
+      where: { lubrifiantId: result.id, tenantId },
       include: {
         parc: {
           select: {
@@ -240,7 +241,7 @@ export async function DELETE(
   try {
     const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -252,7 +253,7 @@ export async function DELETE(
 
     // Vérifier s'il y a des saisies de lubrifiant associées
     const saisiesCount = await prisma.saisielubrifiant.count({
-      where: { lubrifiantId: id },
+      where: { lubrifiantId: id, tenantId },
     });
 
     if (saisiesCount > 0) {
@@ -266,7 +267,7 @@ export async function DELETE(
 
     // Vérifier s'il y a des parcs associés
     const parcsCount = await prisma.lubrifiantParc.count({
-      where: { lubrifiantId: id },
+      where: { lubrifiantId: id, tenantId },
     });
 
     if (parcsCount > 0) {
@@ -279,7 +280,7 @@ export async function DELETE(
     }
 
     const existingLubrifiant = await prisma.lubrifiant.findUnique({
-      where: { id },
+      where: { id, tenantId },
     });
 
     if (!existingLubrifiant) {
@@ -290,7 +291,7 @@ export async function DELETE(
     }
 
     await prisma.lubrifiant.delete({
-      where: { id },
+      where: { id, tenantId },
     });
 
     return NextResponse.json({ message: "Lubrifiant supprimé avec succès" });

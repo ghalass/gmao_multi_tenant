@@ -16,7 +16,7 @@ export async function PATCH(request: NextRequest) {
 
     // Récupérer l'utilisateur actuel
     const existingUser = await prisma.user.findUnique({
-      where: { id: session.userId },
+      where: { id: session.userId, tenantId: session.tenant.id! },
     });
 
     if (!existingUser) {
@@ -35,10 +35,6 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      // const isCurrentPasswordValid = await bcrypt.compare(
-      //   currentPassword,
-      //   existingUser.password
-      // );
       const isCurrentPasswordValid = await verifyPassword(
         currentPassword,
         existingUser.password

@@ -7,6 +7,7 @@ import {
   protectReadRoute,
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "typeparc";
 
@@ -19,10 +20,12 @@ export async function GET(
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
 
+    const tenantId = (await getSession()).tenant.id!;
+
     const { id } = await context.params;
 
     const typeparc = await prisma.typeparc.findUnique({
-      where: { id },
+      where: { id, tenantId: tenantId },
       include: {
         _count: {
           select: {
@@ -57,7 +60,7 @@ export async function PUT(
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
     const body = await request.json();
 
@@ -69,7 +72,7 @@ export async function PUT(
 
     // Vérifier si le type de parc existe
     const existingTypeparc = await prisma.typeparc.findUnique({
-      where: { id },
+      where: { id, tenantId: tenantId },
     });
 
     if (!existingTypeparc) {
@@ -83,6 +86,7 @@ export async function PUT(
     const duplicateTypeparc = await prisma.typeparc.findFirst({
       where: {
         name: validatedData.name,
+        tenantId: tenantId,
         id: { not: id },
       },
     });
@@ -95,7 +99,7 @@ export async function PUT(
     }
 
     const updatedTypeparc = await prisma.typeparc.update({
-      where: { id },
+      where: { id, tenantId: tenantId },
       data: validatedData,
       include: {
         _count: {
@@ -136,7 +140,7 @@ export async function PATCH(
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
     const body = await request.json();
 
@@ -148,7 +152,7 @@ export async function PATCH(
 
     // Vérifier si le type de parc existe
     const existingTypeparc = await prisma.typeparc.findUnique({
-      where: { id },
+      where: { id, tenantId: tenantId },
     });
 
     if (!existingTypeparc) {
@@ -164,6 +168,7 @@ export async function PATCH(
         where: {
           name: validatedData.name,
           id: { not: id },
+          tenantId: tenantId,
         },
       });
 
@@ -176,7 +181,7 @@ export async function PATCH(
     }
 
     const updatedTypeparc = await prisma.typeparc.update({
-      where: { id },
+      where: { id, tenantId: tenantId },
       data: validatedData,
       include: {
         _count: {
@@ -217,12 +222,12 @@ export async function DELETE(
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     // Vérifier si le type de parc existe
     const existingTypeparc = await prisma.typeparc.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         _count: {
           select: {
@@ -250,7 +255,7 @@ export async function DELETE(
     }
 
     await prisma.typeparc.delete({
-      where: { id },
+      where: { id, tenantId },
     });
 
     return NextResponse.json({ message: "Type de parc supprimé avec succès" });

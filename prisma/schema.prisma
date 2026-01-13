@@ -39,6 +39,7 @@ model Tenant {
   saisiehrm                 Saisiehrm[]
   saisiehim                 Saisiehim[]
   typeOrganes               TypeOrgane[]
+  typeparcs                 Typeparc[]
 
   @@map("tenant")
 }
@@ -133,9 +134,13 @@ model Typeparc {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   // Relations
   parcs Parc[]
 
+  @@unique([tenantId, name])
   @@map("typeparc")
 }
 

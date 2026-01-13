@@ -6,6 +6,7 @@ import {
   protectReadRoute,
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 interface Context {
   params: Promise<{ id: string }>;
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest, context: Context) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest, context: Context) {
     // - typepanne
     // - saisiehim (notez le nom correct : saisiehim, pas saisiehims)
     const panne = await prisma.panne.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         typepanne: true,
         // CORRECTION : Utiliser le nom correct de la relation avec majuscule
@@ -77,7 +78,7 @@ export async function PUT(request: NextRequest, context: Context) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -91,7 +92,7 @@ export async function PUT(request: NextRequest, context: Context) {
 
     // Vérifier si la panne existe
     const existingPanne = await prisma.panne.findUnique({
-      where: { id },
+      where: { id, tenantId },
     });
 
     if (!existingPanne) {
@@ -115,7 +116,7 @@ export async function PUT(request: NextRequest, context: Context) {
 
     // Vérifier si le type de panne existe
     const typepanneExists = await prisma.typepanne.findUnique({
-      where: { id: body.typepanneId },
+      where: { id: body.typepanneId, tenantId },
     });
 
     if (!typepanneExists) {
@@ -129,6 +130,7 @@ export async function PUT(request: NextRequest, context: Context) {
     if (body.name !== existingPanne.name) {
       const duplicatePanne = await prisma.panne.findFirst({
         where: {
+          tenantId,
           name: body.name,
           id: { not: id },
         },
@@ -144,7 +146,7 @@ export async function PUT(request: NextRequest, context: Context) {
 
     // Mettre à jour la panne
     const panne = await prisma.panne.update({
-      where: { id },
+      where: { id, tenantId },
       data: {
         name: body.name,
         typepanneId: body.typepanneId,

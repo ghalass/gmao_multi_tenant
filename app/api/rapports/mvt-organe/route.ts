@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { HttpStatusCode } from "axios";
+import { getSession } from "@/lib/auth";
 
 function daysInMonth(year: number, monthIndex: number) {
   return new Date(year, monthIndex + 1, 0).getDate();
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { mois, annee } = body;
-
+    const tenantId = (await getSession()).tenant.id!;
     if (!mois || !annee) {
       return NextResponse.json(
         { message: "Paramètres 'mois' et 'année' obligatoires" },
@@ -48,13 +49,14 @@ export async function POST(req: Request) {
 
     // Récupérer tous les sites actifs
     const sites = await prisma.site.findMany({
-      where: { active: true },
+      where: { active: true, tenantId },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     });
 
     // Récupérer tous les types de parcs avec leurs parcs
     const typeParcs = await prisma.typeparc.findMany({
+      where: { tenantId },
       include: {
         parcs: {
           include: {
@@ -155,6 +157,7 @@ export async function POST(req: Request) {
               // Trouver la pose correspondante (même organe, même jour ou après)
               const poseCorrespondante = await prisma.mvtOrgane.findFirst({
                 where: {
+                  tenantId,
                   organeId: depose.organeId,
                   enginId: depose.enginId,
                   date_mvt: {
@@ -181,6 +184,7 @@ export async function POST(req: Request) {
               // Trouver la dernière pose avant cette dépose
               const dernierePose = await prisma.mvtOrgane.findFirst({
                 where: {
+                  tenantId,
                   organeId: depose.organeId,
                   enginId: depose.enginId,
                   date_mvt: {
@@ -201,6 +205,7 @@ export async function POST(req: Request) {
                 // Récupérer les HRM de l'engin entre ces dates
                 const hrmPeriodes = await prisma.saisiehrm.findMany({
                   where: {
+                    tenantId,
                     enginId: engin.id,
                     du: {
                       gte: dateDebutHRM,

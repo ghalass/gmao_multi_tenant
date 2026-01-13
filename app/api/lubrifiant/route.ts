@@ -13,8 +13,9 @@ export async function GET(request: NextRequest) {
     // Vérifier la permission de lecture des lubrifiants
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const lubrifiants = await prisma.lubrifiant.findMany({
+      where: { tenantId },
       include: {
         typelubrifiant: true,
         _count: {
@@ -29,6 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Récupérer les associations avec les parcs pour tous les lubrifiants
     const lubrifiantParcs = await prisma.lubrifiantParc.findMany({
+      where: { tenantId },
       include: {
         parc: {
           select: {
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
     // Vérifier la permission de création des lubrifiants
     const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const body = await request.json();
     const { name, typelubrifiantId, parcIds } = body;
 
@@ -97,7 +99,7 @@ export async function POST(request: NextRequest) {
 
     // Vérifier que le type de lubrifiant existe
     const typeLubrifiantExists = await prisma.typelubrifiant.findUnique({
-      where: { id: typelubrifiantId },
+      where: { id: typelubrifiantId, tenantId },
     });
 
     if (!typeLubrifiantExists) {
@@ -109,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     // Vérifier que tous les parcs existent
     const parcs = await prisma.parc.findMany({
-      where: { id: { in: parcIds } },
+      where: { id: { in: parcIds }, tenantId },
     });
 
     if (parcs.length !== parcIds.length) {
@@ -118,14 +120,13 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const session = await getSession();
     // Créer le lubrifiant et ses associations avec les parcs
     const result = await prisma.$transaction(async (tx) => {
       const lubrifiant = await tx.lubrifiant.create({
         data: {
           name: name.trim(),
           typelubrifiantId,
-          tenantId: session.tenant.id!,
+          tenantId,
         },
         include: {
           typelubrifiant: true,
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
       const lubrifiantParcs = parcIds.map((parcId) => ({
         parcId,
         lubrifiantId: lubrifiant.id,
-        tenantId: session.tenant.id!,
+        tenantId,
       }));
 
       await tx.lubrifiantParc.createMany({

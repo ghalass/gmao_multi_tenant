@@ -2,9 +2,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { format, startOfDay, endOfDay } from "date-fns";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
+    const tenantId = (await getSession()).tenant.id!;
     const searchParams = request.nextUrl.searchParams;
     const dateParam = searchParams.get("date");
     const cursor = searchParams.get("cursor");
@@ -38,6 +40,7 @@ export async function GET(request: NextRequest) {
 
     // Construction du filtre
     const where = {
+      tenantId,
       du: {
         gte: startDate,
         lte: endDate,

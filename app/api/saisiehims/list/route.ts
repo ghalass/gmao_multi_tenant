@@ -2,9 +2,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { startOfDay, endOfDay } from "date-fns";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
+    const tenantId = (await getSession()).tenant.id!;
     const searchParams = request.nextUrl.searchParams;
     const dateParam = searchParams.get("date");
     const cursor = searchParams.get("cursor");
@@ -37,6 +39,7 @@ export async function GET(request: NextRequest) {
 
     // Construction du filtre basé sur la date de saisiehrm
     const where: any = {
+      tenantId,
       // Filtrer par la date de la saisie HRM associée
       saisiehrm: {
         du: {

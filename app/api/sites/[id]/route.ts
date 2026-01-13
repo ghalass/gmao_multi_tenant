@@ -6,6 +6,7 @@ import {
   protectReadRoute,
   protectUpdateRoute,
 } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "site";
 
@@ -16,7 +17,7 @@ export async function GET(
   try {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -27,7 +28,7 @@ export async function GET(
     }
 
     const site = await prisma.site.findUnique({
-      where: { id },
+      where: { id, tenantId },
     });
 
     if (!site) {
@@ -51,7 +52,7 @@ export async function PUT(
   try {
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -73,7 +74,7 @@ export async function PUT(
     }
 
     const existingSite = await prisma.site.findUnique({
-      where: { id },
+      where: { id, tenantId },
     });
 
     if (!existingSite) {
@@ -81,7 +82,7 @@ export async function PUT(
     }
 
     const site = await prisma.site.update({
-      where: { id },
+      where: { id, tenantId },
       data: {
         ...(name !== undefined && { name }),
         ...(active !== undefined && { active }),
@@ -121,7 +122,7 @@ export async function DELETE(
   try {
     const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -132,7 +133,7 @@ export async function DELETE(
     }
 
     const existingSite = await prisma.site.findUnique({
-      where: { id },
+      where: { id, tenantId },
     });
 
     if (!existingSite) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { HttpStatusCode } from "axios";
+import { getSession } from "@/lib/auth";
 
 function daysInMonth(year: number, monthIndex: number) {
   return new Date(year, monthIndex + 1, 0).getDate();
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { mois, annee } = body;
-
+    const tenantId = (await getSession()).tenant.id!;
     if (!mois || !annee) {
       return NextResponse.json(
         { message: "Paramètres 'mois' et 'année' obligatoires" },
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
 
     // Récupérer tous les engins actifs avec leurs sites et parcs
     const engins = await prisma.engin.findMany({
-      where: { active: true },
+      where: { active: true, tenantId },
       include: {
         site: {
           select: {
@@ -126,6 +127,7 @@ export async function POST(req: Request) {
         // Récupérer tous les organes actifs associés à cet engin
         const mouvementsOrganes = await prisma.mvtOrgane.findMany({
           where: {
+            tenantId,
             enginId: engin.id,
             organe: {
               active: true,
@@ -202,6 +204,7 @@ export async function POST(req: Request) {
             if (dateDebutMensuel <= dateFinMensuel) {
               const hrmPeriodes = await prisma.saisiehrm.findMany({
                 where: {
+                  tenantId,
                   enginId: engin.id,
                   du: {
                     gte: dateDebutMensuel,
@@ -228,6 +231,7 @@ export async function POST(req: Request) {
           if (dateDebutCumul <= dateFinCumul) {
             const hrmPeriodesCumul = await prisma.saisiehrm.findMany({
               where: {
+                tenantId,
                 enginId: engin.id,
                 du: {
                   gte: dateDebutCumul,

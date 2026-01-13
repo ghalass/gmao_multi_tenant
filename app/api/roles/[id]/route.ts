@@ -18,7 +18,7 @@ export async function GET(
   try {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
     if (!id || id === "roles") {
       return NextResponse.json(
@@ -28,7 +28,7 @@ export async function GET(
     }
     const session = await getSession();
     const role = await prisma.role.findUnique({
-      where: { id, tenantId: session.tenant.id! },
+      where: { id, tenantId },
       include: {
         permissions: true, // Relation directe avec Permission
         users: true, // Relation directe avec User
@@ -57,7 +57,7 @@ export async function PUT(
   try {
     const protectionError = await protectUpdateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id || id === "roles") {
@@ -84,7 +84,7 @@ export async function PUT(
     }
 
     const existingRole = await prisma.role.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         permissions: true,
         users: true,
@@ -111,7 +111,7 @@ export async function PUT(
     // Mettre à jour le nom et la description si fournis
     if (Object.keys(updateData).length > 0) {
       await prisma.role.update({
-        where: { id },
+        where: { id, tenantId },
         data: updateData,
       });
     }
@@ -158,7 +158,7 @@ export async function PUT(
 
     // Récupérer le rôle mis à jour avec ses relations
     const updatedRole = await prisma.role.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         permissions: true,
         users: true,
@@ -191,7 +191,7 @@ export async function DELETE(
   try {
     const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id || id === "roles") {
@@ -202,7 +202,7 @@ export async function DELETE(
     }
 
     const existingRole = await prisma.role.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         users: true, // Vérifier les utilisateurs directement liés
         permissions: true, // Optionnel: voir les permissions associées
@@ -227,7 +227,7 @@ export async function DELETE(
     // Note: Les permissions seront automatiquement déconnectées
     // grâce à la relation Many-to-Many (cascade par défaut)
     await prisma.role.delete({
-      where: { id },
+      where: { id, tenantId },
     });
 
     return NextResponse.json({

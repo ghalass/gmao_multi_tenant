@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { API } from "@/lib/constantes";
+import { ROUTE } from "@/lib/routes";
+import { API } from "@/lib/api";
 
 interface SimplePermissionFormProps {
   initialData?: any;
@@ -53,7 +54,7 @@ export function PermissionForm({
     const loadResources = async () => {
       setIsLoadingResources(true);
       try {
-        const response = await fetch(`${API}/tables`);
+        const response = await fetch(API.TABLES);
         if (response.ok) {
           const data = await response.json();
           setResources(data);

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { protectDeleteRoute, protectReadRoute } from "@/lib/rbac/middleware";
+import { getSession } from "@/lib/auth";
 
 const the_resource = "saisiehrm";
 
@@ -12,7 +13,7 @@ export async function GET(
   try {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
     if (!id) {
       return NextResponse.json(
@@ -22,7 +23,7 @@ export async function GET(
     }
 
     const saisiehrm = await prisma.saisiehrm.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         engin: {
           select: {
@@ -73,7 +74,7 @@ export async function DELETE(
   try {
     const protectionError = await protectDeleteRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const { id } = await context.params;
 
     if (!id) {
@@ -85,7 +86,7 @@ export async function DELETE(
 
     // Vérifier si la saisie existe
     const existingSaisiehrm = await prisma.saisiehrm.findUnique({
-      where: { id },
+      where: { id, tenantId },
       include: {
         saisiehim: true,
       },

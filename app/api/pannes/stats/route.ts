@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 
 export async function GET() {
   try {
+    const tenantId = (await getSession()).tenant.id!;
     // Compter le nombre total de pannes
-    const totalPannes = await prisma.panne.count();
+    const totalPannes = await prisma.panne.count({
+      where: { tenantId: tenantId },
+    });
 
     // Compter les pannes par type
     const pannesParType = await prisma.typepanne.findMany({
+      where: { tenantId: tenantId },
       include: {
         _count: {
           select: {
@@ -20,6 +25,7 @@ export async function GET() {
     // Compter les pannes utilisées dans des saisies HIM
     const pannesAvecSaisies = await prisma.panne.count({
       where: {
+        tenantId,
         saisiehim: {
           some: {},
         },
@@ -29,6 +35,7 @@ export async function GET() {
     // Compter les pannes sans saisies HIM
     const pannesSansSaisies = await prisma.panne.count({
       where: {
+        tenantId,
         saisiehim: {
           none: {},
         },
@@ -37,6 +44,7 @@ export async function GET() {
 
     // Obtenir les 5 pannes les plus utilisées
     const pannesPlusUtilisees = await prisma.panne.findMany({
+      where: { tenantId: tenantId },
       include: {
         _count: {
           select: {
@@ -55,6 +63,7 @@ export async function GET() {
 
     // Obtenir les pannes récemment créées
     const pannesRecentees = await prisma.panne.findMany({
+      where: { tenantId: tenantId },
       include: {
         typepanne: true,
         _count: {

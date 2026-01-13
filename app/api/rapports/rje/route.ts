@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { du } = body;
-
+    const tenantId = (await getSession()).tenant.id!;
     if (!du) {
       return NextResponse.json(
         { message: "Paramètre 'du' obligatoire (YYYY-MM-DD)" },
@@ -95,6 +95,7 @@ export async function POST(req: Request) {
       where: {
         saisiehrm: { some: {} },
         active: true,
+        tenantId,
       },
       select: {
         id: true,
@@ -107,7 +108,7 @@ export async function POST(req: Request) {
     const finalData = await Promise.all(
       engins.map(async (engin) => {
         const enginDetails = await prisma.engin.findUnique({
-          where: { id: engin.id, active: true },
+          where: { id: engin.id, active: true, tenantId },
           select: {
             parcId: true,
             parc: { select: { name: true } },
@@ -119,6 +120,7 @@ export async function POST(req: Request) {
           where: {
             enginId: engin.id,
             du: dateCible,
+            tenantId,
           },
           select: {
             siteId: true,
@@ -130,7 +132,6 @@ export async function POST(req: Request) {
         const siteName = saisieJour?.site?.name ?? null;
         const annee = dateCible.getFullYear();
 
-        const session = await getSession();
         // Objectifs
         const objectif = siteId
           ? await prisma.objectif.findUnique({
@@ -138,7 +139,7 @@ export async function POST(req: Request) {
                 annee_parcId_siteId_tenantId: {
                   annee,
                   parcId: enginDetails?.parcId!,
-                  tenantId: session.tenant.id!,
+                  tenantId,
                   siteId: siteId,
                 },
               },

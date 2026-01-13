@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   try {
     const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const body = await request.json();
     const { du, hrm, enginId, siteId } = body;
 
@@ -66,14 +66,13 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const session = await getSession();
     const saisiehrm = await prisma.saisiehrm.create({
       data: {
         du: new Date(du),
         hrm: parseFloat(hrm),
         enginId,
         siteId,
-        tenantId: session.tenant.id!,
+        tenantId,
       },
       include: {
         engin: {

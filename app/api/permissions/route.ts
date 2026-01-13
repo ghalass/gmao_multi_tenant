@@ -9,27 +9,10 @@ export async function GET(request: NextRequest) {
   try {
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
-    const session = await getSession();
-    if (!session?.tenant.id) {
-      return NextResponse.json(
-        { message: "Ce nom d'entreprise n'existe pas" },
-        { status: 404 }
-      );
-    }
-    // Vérifier si le tenant existe déjà
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: session?.tenant.id },
-    });
-    if (!tenant) {
-      return NextResponse.json(
-        { message: "Ce nom d'entreprise n'existe pas" },
-        { status: 404 }
-      );
-    }
+    const tenantId = (await getSession()).tenant.id!;
 
     const permissions = await prisma.permission.findMany({
-      where: { tenantId: session.tenant.id },
+      where: { tenantId },
     });
 
     return NextResponse.json(permissions);
@@ -46,24 +29,7 @@ export async function POST(request: NextRequest) {
   try {
     const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
-    const session = await getSession();
-    if (!session?.tenant.id) {
-      return NextResponse.json(
-        { message: "Ce nom d'entreprise n'existe pas" },
-        { status: 404 }
-      );
-    }
-    // Vérifier si le tenant existe déjà
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: session?.tenant.id },
-    });
-    if (!tenant) {
-      return NextResponse.json(
-        { message: "Ce nom d'entreprise n'existe pas" },
-        { status: 404 }
-      );
-    }
+    const tenantId = (await getSession()).tenant.id!;
 
     const body = await request.json();
     const { name, resource, action, description } = body;
@@ -83,7 +49,7 @@ export async function POST(request: NextRequest) {
         resource,
         action,
         description,
-        tenantId: session?.tenant?.id,
+        tenantId,
       },
     });
 

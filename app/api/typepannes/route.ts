@@ -11,8 +11,9 @@ export async function GET(request: NextRequest) {
     // Vérifier la permission de lecture des types de panne
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const typepannes = await prisma.typepanne.findMany({
+      where: { tenantId },
       include: {
         _count: {
           select: {
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     // Vérifier la permission de création des types de panne
     const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
+    const tenantId = (await getSession()).tenant.id!;
     const body = await request.json();
     const { name, description } = body;
 
@@ -76,10 +77,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const session = await getSession();
     // Vérifier si le type de panne existe déjà
     const existingTypepanne = await prisma.typepanne.findUnique({
-      where: { tenantId_name: { name, tenantId: session.tenant.id! } },
+      where: { tenantId_name: { name, tenantId } },
     });
 
     if (existingTypepanne) {
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         description: description || null,
-        tenantId: session.tenant.id!,
+        tenantId,
       },
       include: {
         _count: {

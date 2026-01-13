@@ -1,6 +1,5 @@
 // hooks/useAnomalies.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { API } from "@/lib/constantes";
 import {
   Anomalie,
   AnomalieFormData,
@@ -8,6 +7,8 @@ import {
   AnomalieStats,
   AnomalieWithRelations,
 } from "@/lib/types/anomalie";
+import { ROUTE } from "@/lib/routes";
+import { API } from "@/lib/api";
 
 // Fonction séparée pour récupérer une anomalie par ID avec toutes les mutations
 export const useAnomalie = (id?: string) => {
@@ -19,7 +20,7 @@ export const useAnomalie = (id?: string) => {
       if (!id) {
         throw new Error("ID de l'anomalie requis");
       }
-      const response = await fetch(`${API}/anomalies/${id}`);
+      const response = await fetch(API.ANOMALIES.ANOMALIE_DETAILS(id));
       const dataRes = await response.json();
 
       if (!response.ok) {
@@ -44,7 +45,7 @@ export const useAnomalie = (id?: string) => {
     }
   >({
     mutationFn: async ({ id, data }): Promise<Anomalie> => {
-      const response = await fetch(`${API}/anomalies/${id}`, {
+      const response = await fetch(API.ANOMALIES.ANOMALIE_DETAILS(id), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -73,7 +74,7 @@ export const useAnomalie = (id?: string) => {
 
   const deleteAnomalie = useMutation<void, Error, string>({
     mutationFn: async (anomalieId: string): Promise<void> => {
-      const response = await fetch(`${API}/anomalies/${anomalieId}`, {
+      const response = await fetch(API.ANOMALIES.ANOMALIE_DETAILS(anomalieId), {
         method: "DELETE",
       });
       const dataRes = await response.json();
@@ -123,7 +124,7 @@ export const useAnomalies = (filters?: AnomalieFilters) => {
     queryKey: ["anomalies", filters],
     queryFn: async (): Promise<AnomalieWithRelations[]> => {
       const queryString = buildQueryString();
-      const url = `${API}/anomalies${queryString ? `?${queryString}` : ""}`;
+      const url = `api/anomalies${queryString ? `?${queryString}` : ""}`;
       const response = await fetch(url);
       const dataRes = await response.json();
 
@@ -140,9 +141,7 @@ export const useAnomalies = (filters?: AnomalieFilters) => {
     queryKey: ["anomalieStats", filters],
     queryFn: async (): Promise<AnomalieStats> => {
       const queryString = buildQueryString();
-      const url = `${API}/anomalies/stats${
-        queryString ? `?${queryString}` : ""
-      }`;
+      const url = `api/anomalies/stats${queryString ? `?${queryString}` : ""}`;
       const response = await fetch(url);
       const dataRes = await response.json();
 
@@ -157,7 +156,7 @@ export const useAnomalies = (filters?: AnomalieFilters) => {
 
   const createAnomalie = useMutation<Anomalie, Error, AnomalieFormData>({
     mutationFn: async (data: AnomalieFormData): Promise<Anomalie> => {
-      const response = await fetch(`${API}/anomalies`, {
+      const response = await fetch(API.ANOMALIES.ALL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -248,7 +247,7 @@ export const useAnomalies = (filters?: AnomalieFilters) => {
     queryKey: ["anomalieEvolution", filters],
     queryFn: async (): Promise<EvolutionData> => {
       const queryString = buildQueryString();
-      const url = `${API}/anomalies/evolution${
+      const url = `api/anomalies/evolution${
         queryString ? `?${queryString}` : ""
       }`;
       const response = await fetch(url);

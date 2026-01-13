@@ -11,11 +11,7 @@ export async function GET(request: NextRequest) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectReadRoute(request, the_resource);
     if (protectionError) return protectionError;
-
-    const session = await getSession();
-    if (!session?.userId) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-    }
+    const tenantId = (await getSession()).tenant.id!;
 
     const { searchParams } = new URL(request.url);
     const dateDebut = searchParams.get("dateDebut");
@@ -24,7 +20,9 @@ export async function GET(request: NextRequest) {
     const site = searchParams.get("site");
     const origineSaisie = searchParams.get("origineSaisie");
 
-    const where: any = {};
+    const where: any = {
+      tenantId,
+    };
 
     // Filtrage par date via la relation Saisiehim -> Saisiehrm
     if (dateDebut || dateFin) {
@@ -122,11 +120,7 @@ export async function POST(request: NextRequest) {
     // Vérifier la permission de lecture des sites (pas "users")
     const protectionError = await protectCreateRoute(request, the_resource);
     if (protectionError) return protectionError;
-
-    const session = await getSession();
-    if (!session?.userId) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-    }
+    const tenantId = (await getSession()).tenant.id!;
 
     const body = await request.json();
     const { lubrifiantId, qte, saisiehimId, typeconsommationlubId, obs } = body;
@@ -149,7 +143,7 @@ export async function POST(request: NextRequest) {
         saisiehimId,
         typeconsommationlubId: typeconsommationlubId || null,
         obs: obs || null,
-        tenantId: session.tenant.id!,
+        tenantId,
       },
       include: {
         lubrifiant: true,

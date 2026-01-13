@@ -7,7 +7,6 @@ export const ROUTE = {
   },
   USERS: {
     ALL: `/users`,
-    USER_DETAIL: (userId: string) => `/users/${userId}`,
   },
   ENTREPRISES: {
     ALL: "/entreprises",

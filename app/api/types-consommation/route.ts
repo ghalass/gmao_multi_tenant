@@ -1,4 +1,5 @@
 // app/api/types-consommation/route.ts
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { protectReadRoute } from "@/lib/rbac/middleware";
 import { NextRequest, NextResponse } from "next/server";
@@ -12,6 +13,7 @@ export async function GET(request: NextRequest) {
     if (protectionError) return protectionError;
 
     const typesConsommation = await prisma.typeconsommationlub.findMany({
+      where: { tenantId: (await getSession())?.tenant.id! },
       orderBy: {
         name: "asc",
       },

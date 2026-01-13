@@ -9,6 +9,7 @@ let GLOBAL_API_DELAY = SIMULATE_DELAY ? DELAY_MS : 0;
 let DELAY_ENABLED = SIMULATE_DELAY;
 
 export const API = {
+  TABLES: "/api/tables",
   AUTH: {
     LOGIN: `/api/auth/login`,
     REGISTER: `/api/auth/register`,
@@ -172,8 +173,9 @@ export const API = {
     DELETE: (id: string) => `/api/typeconsommationlubs/${id}`,
     BY_PARC: (parcId: string) => `/api/typeconsommationlubs?parcId=${parcId}`,
   },
-  RAPPORTS_RJE: {
-    BASE: "/api/rapports/rje",
+  RAPPORTS: {
+    RJE: "/api/rapports/rje",
+    ANALYSE_INDISPO: "/api/rapports/analyse-indisponibilite",
   },
   ENTREPRISES: {
     ALL: "/api/entreprises",
